@@ -49,6 +49,7 @@
 4. 구현 중 정한 잠정 해석은 `design.md` Open Questions에 기록한다.
 5. 문서(design.md 등) 커밋과 코드 커밋은 분리한다.
 6. 커밋 메시지 형식: `feat: … (작업 x.y~x.z)`, `docs(openspec): …`
+7. 빌드할 때는 사용자에게 묻지 않고 AI가 localhost:3000 개발 서버를 끄고 `npm run build`를 돌린 뒤, 빌드가 끝나면 개발 서버(`npm run dev`, localhost:3000)를 다시 켜 둔다. (서버가 떠 있는 채로 빌드하면 개발 서버가 깨진다)
 
 ---
 
