@@ -9,6 +9,7 @@ import type { PendingWord, WordCard } from "@/types";
 import { readCards, readPending } from "@/lib/storage";
 import { LinkButton } from "./Button";
 import { contextOption } from "./heardContext";
+import { PrivacyNotice } from "./PrivacyNotice";
 
 type Saved = { cards: WordCard[]; pending: PendingWord[] };
 
@@ -111,6 +112,7 @@ export function CardsScreen() {
       )}
 
       <LinkButton href="/app">모야에게 물어보기</LinkButton>
+      <PrivacyNotice />
     </main>
   );
 }

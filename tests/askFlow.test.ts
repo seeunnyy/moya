@@ -7,6 +7,8 @@ import {
   type AskState,
 } from "../src/lib/askFlow.ts";
 import { MOCK_WORDS } from "../src/data/words.mock.ts";
+import { EXAMPLE_PROMPTS } from "../src/data/examplePrompts.ts";
+import { BLOCKED_WORDS } from "../src/data/blocklist.ts";
 
 const reduce = createAskReducer(MOCK_WORDS);
 const run = (actions: AskAction[], from: AskState = initialAskState) =>
@@ -132,4 +134,54 @@ test("지금 상태에 맞지 않는 동작은 무시한다", () => {
   assert.equal(run([ask("가바가 뭐야?")], confirm), confirm);
   const choose = run([ask("가바가 뭐야?"), { type: "pickContext" }]);
   assert.equal(run([{ type: "pickCandidate", entryId: "없음" }], choose), choose);
+});
+
+test("05 §5 데모 2~4단계: 예시 질문만으로 수박·가발 설명, 뿌잉뿌잉 물어볼 단어 (QA-11)", () => {
+  const [dubak, gaba, ppuing] = EXAMPLE_PROMPTS;
+
+  const confirm = run([ask(dubak)]);
+  assert.equal(confirm.phase, "confirm");
+  const suBak = run([{ type: "confirmYes" }], confirm);
+  assert.equal(suBak.phase === "explaining" && suBak.entry.word, "수박");
+
+  const choose = run([ask(gaba), { type: "pickContext", context: "tv" }]);
+  assert.equal(choose.phase, "choose");
+  if (choose.phase !== "choose") return;
+  assert.equal(choose.candidates[0].entry.word, "가발");
+  const gabal = run([{ type: "pickCandidate", entryId: choose.candidates[0].entry.id }], choose);
+  assert.equal(gabal.phase === "explaining" && gabal.entry.word, "가발");
+
+  assert.equal(run([ask(ppuing)]).phase, "unknown");
+});
+
+test("부적절 단어 → blocked, 후보 찾기·저장 단계로 가지 않는다 (content-safety)", () => {
+  const guarded = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
+  const s = guarded(initialAskState, ask(`${BLOCKED_WORDS[0]}이 뭐야?`));
+  assert.equal(s.phase, "blocked");
+  assert.ok(!("spokenAs" in s), "단어를 상태에 남기지 않는다");
+  // 어떤 저장 트리거(explaining·unknown)로도 넘어가지 않는다
+  const actions: AskAction[] = [
+    { type: "confirmYes" },
+    { type: "reject" },
+    { type: "cardSaved" },
+    { type: "pendingSaved" },
+  ];
+  for (const action of actions) {
+    assert.equal(guarded(s, action).phase, "blocked");
+  }
+  assert.equal(guarded(s, { type: "restart" }).phase, "idle");
+});
+
+test("인식 후보 중 하나라도 부적절 단어면 blocked", () => {
+  const guarded = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
+  const s = guarded(initialAskState, {
+    type: "recognized",
+    transcripts: ["공룡이 뭐야", `${BLOCKED_WORDS[0]}이 뭐야`],
+  });
+  assert.equal(s.phase, "blocked");
+});
+
+test("목록에 없는 단어는 평소처럼 되묻기로 간다", () => {
+  const guarded = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
+  assert.equal(guarded(initialAskState, ask("공룡이 뭐야?")).phase, "confirm");
 });

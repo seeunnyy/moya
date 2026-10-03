@@ -3,7 +3,8 @@
 //
 // idle → listening → thinking ─┬→ confirm ──────────┬→ explaining → saved → idle
 //                              ├→ context → choose ─┘
-//                              └→ unknown → idle
+//                              ├→ unknown → idle
+//                              └→ blocked → idle   (부적절 단어, 후보 찾기·저장 없음)
 // 오류: micDenied, sttFailed
 
 import type { Candidate, HeardContext, WordEntry } from "../types/index.ts";
@@ -38,6 +39,7 @@ export type AskState =
       entry: WordEntry;
       heardContext?: HeardContext;
     }
+  | { phase: "blocked"; retryCount: number } // 부적절 단어. 단어는 기록하지 않는다
   | { phase: "micDenied"; retryCount: number }
   | { phase: "sttFailed"; retryCount: number };
 
@@ -61,7 +63,8 @@ export const initialAskState: AskState = { phase: "idle", retryCount: 0 };
 // 새 질문을 받을 수 있는 상태 (S1, E1, E2)
 const ASKING = ["idle", "micDenied", "sttFailed", "thinking"];
 
-export function createAskReducer(entries: WordEntry[]) {
+// blockedWords: 대상 단어가 이 목록에 있으면 후보 찾기·설명·저장을 하지 않는다 (content-safety).
+export function createAskReducer(entries: WordEntry[], blockedWords: string[] = []) {
   return function askReducer(state: AskState, action: AskAction): AskState {
     const { retryCount } = state;
 
@@ -89,6 +92,8 @@ export function createAskReducer(entries: WordEntry[]) {
         if (!ASKING.includes(state.phase)) return state;
         const targets = extractTargets(action.transcripts);
         if (targets.length === 0) return { phase: "sttFailed", retryCount };
+        // 인식 후보 중 하나라도 부적절 단어면 막는다.
+        if (targets.some((t) => blockedWords.includes(t))) return { phase: "blocked", retryCount };
         const spokenAs = targets[0];
         const result = inferWord(targets, entries);
         if (result.kind === "confirm") {

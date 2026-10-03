@@ -4,16 +4,19 @@
 // 스타일은 최소. 모야 캐릭터·색·폰트는 디자인 작업에서 입힌다.
 
 import { useEffect, useReducer, useRef } from "react";
+import { BLOCKED_WORDS } from "@/data/blocklist";
 import { MOCK_WORDS } from "@/data/words.mock";
 import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
 import { addCard, addPending } from "@/lib/storage";
 import { Button, LinkButton } from "./Button";
 import { CandidatePicker } from "./CandidatePicker";
 import { ContextPicker } from "./ContextPicker";
+import { ExamplePrompts } from "./ExamplePrompts";
+import { PrivacyNotice } from "./PrivacyNotice";
 import { contextOption } from "./heardContext";
 import { QuestionForm } from "./QuestionForm";
 
-const askReducer = createAskReducer(MOCK_WORDS);
+const askReducer = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
 
 // crypto.randomUUID는 http(휴대폰에서 개발 서버 접속)에서 없을 수 있어 직접 만든다.
 function newId() {
@@ -39,6 +42,8 @@ function heading(state: AskState): string {
       return state.entry.word;
     case "unknown":
       return "물어볼 단어";
+    case "blocked":
+      return "엄마·아빠한테 물어보자";
     case "micDenied":
       return "마이크를 쓸 수 없어";
     case "sttFailed":
@@ -70,6 +75,8 @@ function moyaLine(state: AskState): string {
       return state.entry.kidExplanation;
     case "unknown":
       return "모야도 아직 몰라. 나중에 같이 알아보자";
+    case "blocked":
+      return "그 말은 엄마·아빠한테 물어보자!";
     case "micDenied":
       return "마이크를 쓸 수 없어. 글자로 물어봐 줄래?";
     case "sttFailed":
@@ -143,7 +150,13 @@ export function AskScreen() {
       {(state.phase === "idle" || state.phase === "micDenied" || state.phase === "sttFailed") && (
         <>
           <QuestionForm onAsk={ask} />
-          {state.phase === "idle" && <LinkButton href="/app/cards">단어장</LinkButton>}
+          <ExamplePrompts onAsk={ask} />
+          {state.phase === "idle" && (
+            <>
+              <LinkButton href="/app/cards">단어장</LinkButton>
+              <PrivacyNotice />
+            </>
+          )}
         </>
       )}
 
@@ -192,6 +205,14 @@ export function AskScreen() {
             <LinkButton href="/app/cards">단어장</LinkButton>
           </div>
         </>
+      )}
+
+      {/* 부적절 단어 안내 (content-safety). 단어를 보여주거나 저장하지 않는다 */}
+      {state.phase === "blocked" && (
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={restart}>또 물어보기</Button>
+          <LinkButton href="/app/cards">단어장</LinkButton>
+        </div>
       )}
 
       {/* S6 물어볼 단어 */}
