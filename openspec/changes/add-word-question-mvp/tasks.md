@@ -40,7 +40,7 @@
 
 ## 7. 오늘 범위 통합 확인
 
-- [ ] 7.1 375px 폭에서 S1~S7 가로 스크롤이 없는지 확인하고(QA-09), `npm test`, `npm run lint`, `npm run build`가 모두 통과하는지 확인
+- [x] 7.1 375px 폭에서 S1~S7 가로 스크롤이 없는지 확인하고(QA-09), `npm test`, `npm run lint`, `npm run build`가 모두 통과하는지 확인
 
 ## 8. 시연 폴백과 고지 (1차 배포 전)
 
