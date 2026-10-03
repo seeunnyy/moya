@@ -1,4 +1,4 @@
-# 모야 인수인계 (2026-10-04 기준, 그룹 12 문서 반영 시점)
+# 모야 인수인계 (2026-10-04 기준, 그룹 12 구현 완료 시점)
 
 > 이 문서를 읽는 AI에게: 이 프로젝트를 이어받아 구현을 계속한다.
 > 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md` 순으로 읽고,
@@ -13,15 +13,15 @@
 | 서비스 | 모야 — 만 5~8세 아이가 "○○이 뭐야?"라고 물으면, 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 모바일 웹 (2026 4호선톤 출품 MVP) |
 | 저장소 | `github.com/seeunnyy/moya`, 브랜치 `main` / 로컬: `C:\Users\arong\moya` (Windows) |
 | 스택 | Next.js 16.3.8 (App Router), React 19.2.8, TypeScript, Tailwind CSS 4. 추가 의존성 없음 |
-| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 68개 전부 통과 (8.3 이후 test·lint·build 통과 확인) |
+| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 69개 전부 통과 (그룹 12 후 test·lint·build 통과 확인) |
 | 작업 방식 | OpenSpec spec-driven. 진행 중인 change는 `add-word-question-mvp` 하나 |
-| 진행률 | tasks.md 39개 중 **24개 완료** (그룹 1~8). 그룹 12(Figma 화면 플로우, 7개) 추가 |
-| 커밋 | 그룹 8까지 커밋됨 (`d093da3`, `ba09bf2`). 그룹 12 계획 문서 커밋 |
-| 다음 할 일 | **그룹 12 (Figma 와이어프레임 화면 플로우)** → 10.1~10.4 마이크 → 9.1 소리 → 11 |
+| 진행률 | tasks.md 39개 중 **31개 완료** (그룹 1~8, 12) |
+| 커밋 | 그룹 12까지 커밋됨 |
+| 다음 할 일 | **10.1~10.4 마이크** (권한 안내 [권한 허용하기]·[녹음 시작] 연결) → 9.1 소리 → 11 |
 
-미커밋 변경: 없음 (그룹 12 문서 커밋 직후 기준). `git status`로 다시 확인할 것.
+미커밋 변경: 없음 (그룹 12 커밋 직후 기준). `git status`로 다시 확인할 것.
 
-> 화면 구조가 바뀐다: `/app`은 아이 모드 홈, 묻기 흐름은 `/app/ask`, 카드 상세 `/app/cards/[id]`, 마이크 권한 안내 `/app/mic`. 카드는 [내 단어장에 저장하기]로 저장(자동 저장 아님). 결정과 Figma와 다른 부분은 design.md "Figma 와이어프레임 반영". 아래 §4 코드 지도는 그룹 12 구현 전 기준이다.
+> 화면 구조가 바뀐다: `/app`은 아이 모드 홈, 묻기 흐름은 `/app/ask`, 카드 상세 `/app/cards/[id]`, 마이크 권한 안내 `/app/mic`. 카드는 [내 단어장에 저장하기]로 저장(자동 저장 아님). 결정과 Figma와 다른 부분은 design.md "Figma 와이어프레임 반영", 화면 세부는 Open Questions "그룹 12 구현 중 정한 화면 세부".
 
 ---
 
@@ -99,10 +99,16 @@
 | `src/data/blocklist.ts` | 부적절 단어 mock 1개 — **아직 흐름에 연결 안 됨** (8.3에서 연결) | 3.2 |
 | `src/lib/storage/index.ts` | `moya.cards.v1`, `moya.pending.v1` 읽기·추가. 실패 시 빈 목록/false. 정해진 필드만 저장 | 4.1~4.2 |
 | `src/lib/askFlow.ts` | `/app` 상태 기계 reducer (순수 함수, 단어 데이터 주입) | 5.1 |
-| `src/components/AskScreen.tsx` | `/app` 화면. 상태별 S1~S6·E2 표시, S5·S6 진입 시 한 번 저장 | 5.2~5.7 |
+| `src/components/AskScreen.tsx` | `/app/ask` 화면. 상태별 S1~S6·E1·E2·blocked 표시. S6 진입 시 물어볼 단어 자동 저장, 카드는 [내 단어장에 저장하기]로 저장 | 5.2~5.7, 12.4~12.5 |
 | `src/components/{Button,QuestionForm,ContextPicker,CandidatePicker,heardContext}` | 최소 스타일 UI. 버튼 48px 이상, 글자 필수 | 5.x |
-| `src/app/app/page.tsx` | `<AskScreen />` | 5.x |
-| `src/components/CardsScreen.tsx` | `/app/cards` 화면(S7). 카드 목록·물어볼 단어 목록·빈 상태. 마운트 후 localStorage 읽기 | 6.1 |
+| `src/app/app/page.tsx`, `src/components/HomeScreen.tsx` | `/app` 아이 모드 홈(S9) | 12.1 |
+| `src/app/app/mic/page.tsx`, `src/components/MicPermissionScreen.tsx` | `/app/mic` 권한 안내(S10). 지금은 두 버튼 모두 /app/ask | 12.2 |
+| `src/app/app/ask/page.tsx` | `<AskScreen />` | 12.1 |
+| `src/components/{BackHeader,BottomTabs,ScreenHeading,ImageSlot,SoundButton}` | "<" 헤더, 하단 탭, 제목 포커스, 점선 이미지 자리, 비활성 소리 버튼 자리(9.1에서 연결) | 12.x |
+| `src/components/WordCardView.tsx` | 단어 카드 본문 (S5·S11 공용) | 12.5 |
+| `src/components/CardsScreen.tsx` | `/app/cards` 화면(S7). 2열 카드 그리드·물어볼 단어 목록·빈 상태 | 6.1, 12.6 |
+| `src/app/app/cards/[id]/page.tsx`, `src/components/CardDetailScreen.tsx` | 카드 상세(S11). 처음 물은 말 표시, 없는 id면 안내 | 12.6 |
+| `src/components/useSavedWords.ts` | 저장된 카드·물어볼 단어 읽기 훅 (S7·S11, 서버에서는 null) | 12.6 |
 | `src/app/app/cards/page.tsx` | `<CardsScreen />` | 6.1 |
 | `src/app/page.tsx`, `src/app/parent/page.tsx` | h1만 (S0은 11.1, S8은 베타) | — |
 | `tests/**` | jamo, distance, rules, extract, candidates, words.mock, examplePrompts, storage, askFlow, config | — |
@@ -123,13 +129,13 @@
 | ~~6.1~~ | ~~`/app/cards` 단어장~~ | 완료 | `2c8db68` |
 | ~~7.1~~ | ~~375px 확인(QA-09) + test·lint·build~~ | 완료 | `647bec6`. QA-01~08·10 확인 |
 | ~~8.1~8.3~~ | ~~예시 버튼, 저장·전송 고지, 부적절 단어~~ | 완료 | `d093da3`, `ba09bf2` |
-| **12.1~12.7** | Figma 와이어프레임 화면 플로우 (라우트 분리, 홈·권한 안내, 묻기 화면 문구, 카드 버튼 저장, 목록 그리드·상세) | 11/5 전 | 다음 작업. 마이크·소리 없이 |
+| ~~12.1~12.7~~ | ~~Figma 와이어프레임 화면 플로우~~ | 완료 | 375px 브라우저 확인 |
 | 9.1 | speechSynthesis 래퍼 (ko-KR, 미지원 시 무동작) | 11/5 전 | 모야 대사·설명·후보·[다시 듣기] |
 | 10.1~10.4 | STT 어댑터(mock), `POST /api/stt`, MicButton(MediaRecorder), 권한 안내 [권한 허용하기]·E1 | 11/5 전 | 그룹 12 다음. mock으로 먼저 |
 | 10.5 | 실제 STT 연동 | **보류** | STT 확정(~10/22) 전에는 하지 않는다 |
 | 11.1~11.2 | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | 11/5 전 | 05 §5 |
 
-오늘 범위(05 §2)와 그룹 8은 끝났다. 다음은 그룹 12 → 10.1~10.4 → 9.1 → 11 순서.
+그룹 12까지 끝났다. 다음은 10.1~10.4 → 9.1 → 11 순서.
 
 ---
 
@@ -181,4 +187,4 @@
 2. `git status`, `git log --oneline -5`로 커밋 상태를 확인한다.
 3. `npm test`, `npm run lint`, `npm run build`를 실행한다.
 4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업).
-5. 사용자가 진행을 요청하면 그룹 12부터 시작하고, 2번의 "진행 리듬"을 따른다.
+5. 사용자가 진행을 요청하면 작업 10.1부터 시작하고, 2번의 "진행 리듬"을 따른다.
