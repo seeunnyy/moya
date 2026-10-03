@@ -1,58 +1,27 @@
 "use client";
 
-// /app/cards 단어장 (S7). 이 기기에 저장된 단어 카드와 물어볼 단어를 보여준다 (FR-10).
-// localStorage는 브라우저에만 있으므로 서버 렌더링에서는 "읽는 중"으로 두고, 브라우저에서 읽는다.
-// 스타일은 최소. 색·폰트는 디자인 작업에서 입힌다.
+// /app/cards 단어 카드 목록 (S7, Figma 10). 이 기기에 저장된 단어 카드와 물어볼 단어를 보여준다 (FR-10).
+// 카드는 2열 그리드(그림 자리 + 단어)이고, 누르면 상세(/app/cards/[id])로 간다.
+// 학습 상태 Select·필터 칩은 반복 학습(베타)이라 만들지 않는다. 스타일은 최소.
 
-import { useSyncExternalStore } from "react";
-import type { PendingWord, WordCard } from "@/types";
-import { readCards, readPending } from "@/lib/storage";
-import { LinkButton } from "./Button";
+import Link from "next/link";
+import { BottomTabs } from "./BottomTabs";
 import { contextOption } from "./heardContext";
+import { ImageSlot } from "./ImageSlot";
 import { PrivacyNotice } from "./PrivacyNotice";
-
-type Saved = { cards: WordCard[]; pending: PendingWord[] };
-
-// 최근에 저장한 것이 위로 오게 한다.
-function newestFirst<T extends { createdAt: string }>(list: T[]): T[] {
-  return [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-// 다른 탭에서 저장하면 목록을 다시 읽는다.
-function subscribe(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  return () => window.removeEventListener("storage", onChange);
-}
-
-// useSyncExternalStore는 내용이 같으면 같은 객체를 받아야 다시 그리지 않는다.
-let cachedKey = "";
-let cachedSaved: Saved | null = null;
-
-function readSaved(): Saved {
-  // 손상된 데이터·저장소 접근 실패는 storage 모듈이 빈 목록으로 돌려준다.
-  const cards = readCards();
-  const pending = readPending();
-  const key = JSON.stringify([cards, pending]);
-  if (cachedSaved === null || key !== cachedKey) {
-    cachedKey = key;
-    cachedSaved = { cards: newestFirst(cards), pending: newestFirst(pending) };
-  }
-  return cachedSaved;
-}
-
-// 서버에는 저장소가 없다. null이면 읽는 중으로 보고 빈 상태 안내를 띄우지 않는다.
-const readOnServer = () => null;
+import { ScreenHeading } from "./ScreenHeading";
+import { useSavedWords } from "./useSavedWords";
 
 export function CardsScreen() {
-  const saved = useSyncExternalStore(subscribe, readSaved, readOnServer);
+  const saved = useSavedWords();
 
   const isEmpty = saved !== null && saved.cards.length === 0 && saved.pending.length === 0;
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
-      <h1 className="text-2xl font-bold break-keep">단어장</h1>
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-5 px-4 py-6">
+      <ScreenHeading>내 단어 카드</ScreenHeading>
 
-      {saved === null && <p role="status">단어장을 여는 중…</p>}
+      {saved === null && <p role="status">단어 카드를 여는 중…</p>}
 
       {/* EmptyState */}
       {isEmpty && (
@@ -70,17 +39,16 @@ export function CardsScreen() {
             {saved.cards.length === 0 ? (
               <p className="break-keep">아직 배운 단어가 없어.</p>
             ) : (
-              <ul className="flex flex-col gap-3">
+              <ul className="grid grid-cols-2 gap-3">
                 {saved.cards.map((card) => (
-                  <li key={card.id} className="rounded-lg border-2 border-current p-4">
-                    <p className="text-xl font-bold break-keep">{card.word}</p>
-                    <p className="mt-1 break-keep">{card.kidExplanation}</p>
-                    <p className="mt-2 text-sm font-semibold">이렇게 써</p>
-                    <p className="break-keep">{card.example}</p>
-                    <p className="mt-2 text-sm break-keep">
-                      처음 물은 말: {card.spokenAs}
-                      {card.heardContext && ` · ${contextOption(card.heardContext)?.label}에서 들었어`}
-                    </p>
+                  <li key={card.id}>
+                    <Link
+                      href={`/app/cards/${card.id}`}
+                      className="flex min-h-12 flex-col gap-2 rounded-lg border-2 border-current p-2"
+                    >
+                      <ImageSlot label="그림 자리" className="h-20" />
+                      <span className="text-center text-lg font-bold break-keep">{card.word}</span>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -111,8 +79,8 @@ export function CardsScreen() {
         </>
       )}
 
-      <LinkButton href="/app">모야에게 물어보기</LinkButton>
       <PrivacyNotice />
+      <BottomTabs current="cards" />
     </main>
   );
 }

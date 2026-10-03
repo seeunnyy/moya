@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ComponentProps } from "react";
 
 export const buttonClass =
-  "inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border-2 border-current px-4 py-2 text-base font-semibold break-keep";
+  "inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border-2 border-current px-4 py-2 text-base font-semibold break-keep disabled:cursor-not-allowed disabled:opacity-60";
 
 export function Button({ className = "", ...props }: ComponentProps<"button">) {
   return <button type="button" className={`${buttonClass} ${className}`} {...props} />;

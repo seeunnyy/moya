@@ -5,7 +5,7 @@
 //                              ├→ context → choose ─┘
 //                              ├→ unknown → idle
 //                              └→ blocked → idle   (부적절 단어, 후보 찾기·저장 없음)
-// 오류: micDenied, sttFailed
+// 오류: micDenied, sttFailed → retry로 idle (다시 말하기 횟수 유지)
 
 import type { Candidate, HeardContext, WordEntry } from "../types/index.ts";
 import { MAX_RETRY } from "./config.ts";
@@ -49,6 +49,7 @@ export type AskAction =
   | { type: "recordingDone" }
   | { type: "micDenied" }
   | { type: "sttFailed" }
+  | { type: "retry" } // E2 [다시 녹음하기]. restart와 달리 retryCount를 유지한다
   | { type: "recognized"; transcripts: string[] } // 인식 후보 또는 텍스트 입력 1개
   | { type: "confirmYes" } // [응]
   | { type: "reject" } // [아니야] / [다 아니야]
@@ -87,6 +88,11 @@ export function createAskReducer(entries: WordEntry[], blockedWords: string[] = 
 
       case "sttFailed":
         return state.phase === "thinking" ? { phase: "sttFailed", retryCount } : state;
+
+      case "retry":
+        return state.phase === "sttFailed" || state.phase === "micDenied"
+          ? { phase: "idle", retryCount }
+          : state;
 
       case "recognized": {
         if (!ASKING.includes(state.phase)) return state;

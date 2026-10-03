@@ -1,5 +1,5 @@
-import { AskScreen } from "@/components/AskScreen";
+import { HomeScreen } from "@/components/HomeScreen";
 
-export default function AskPage() {
-  return <AskScreen />;
+export default function HomePage() {
+  return <HomeScreen />;
 }

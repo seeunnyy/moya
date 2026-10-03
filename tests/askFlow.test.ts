@@ -127,6 +127,16 @@ test("restart → 다시 말하기 횟수도 처음부터", () => {
   assert.deepEqual(s, initialAskState);
 });
 
+test("[다시 녹음하기](retry) → idle, 다시 말하기 횟수는 그대로", () => {
+  const failed = run([ask("공룡이 뭐야?"), { type: "reject" }, ask("공룡")]);
+  assert.equal(failed.phase, "sttFailed");
+  assert.deepEqual(run([{ type: "retry" }], failed), { phase: "idle", retryCount: 1 });
+  const denied = run([{ type: "startListening" }, { type: "micDenied" }]);
+  assert.equal(run([{ type: "retry" }], denied).phase, "idle");
+  const confirm = run([ask("공룡이 뭐야?")]);
+  assert.equal(run([{ type: "retry" }], confirm), confirm);
+});
+
 test("지금 상태에 맞지 않는 동작은 무시한다", () => {
   assert.equal(run([{ type: "confirmYes" }]), initialAskState);
   assert.equal(run([{ type: "cardSaved" }]), initialAskState);

@@ -1,20 +1,24 @@
 "use client";
 
-// /app 묻기 흐름 화면. 상태(04 §4)에 따라 S1~S6, E1, E2를 바꿔 보여준다 (03 §1).
-// 스타일은 최소. 모야 캐릭터·색·폰트는 디자인 작업에서 입힌다.
+// /app/ask 묻기 흐름 화면. 상태(04 §4)에 따라 S1~S6, E1, E2를 바꿔 보여준다 (03 §1, Figma 3~9).
+// 스타일은 최소. 모야 캐릭터·색·폰트는 디자인 작업에서 입힌다. 이미지는 점선 자리 박스.
 
-import { useEffect, useReducer, useRef } from "react";
+import { useReducer, useState } from "react";
 import { BLOCKED_WORDS } from "@/data/blocklist";
 import { MOCK_WORDS } from "@/data/words.mock";
 import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
 import { addCard, addPending } from "@/lib/storage";
+import { BackHeader } from "./BackHeader";
 import { Button, LinkButton } from "./Button";
 import { CandidatePicker } from "./CandidatePicker";
 import { ContextPicker } from "./ContextPicker";
 import { ExamplePrompts } from "./ExamplePrompts";
+import { ImageSlot } from "./ImageSlot";
 import { PrivacyNotice } from "./PrivacyNotice";
 import { contextOption } from "./heardContext";
 import { QuestionForm } from "./QuestionForm";
+import { SoundButton } from "./SoundButton";
+import { WordCardView } from "./WordCardView";
 
 const askReducer = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
 
@@ -23,23 +27,24 @@ function newId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// 화면 제목. 문구는 Figma 그대로 (말투 통일은 design.md Open Questions).
 function heading(state: AskState): string {
   switch (state.phase) {
     case "idle":
-      return "모야에게 물어보기";
+      return "뭐가 궁금해?";
     case "listening":
       return "듣는 중";
     case "thinking":
       return "생각 중";
     case "confirm":
-      return "이 말 맞아?";
+      return "이 단어 맞나요?";
     case "context":
       return "어디서 들었어?";
     case "choose":
-      return "어떤 말이야?";
+      return "이 중에 네가 물어본 단어가 있어?";
     case "explaining":
     case "saved":
-      return state.entry.word;
+      return "단어 카드";
     case "unknown":
       return "물어볼 단어";
     case "blocked":
@@ -66,57 +71,36 @@ function moyaLine(state: AskState): string {
       return `${state.candidate.entry.word} 말하는 거야? ${state.candidate.entry.hint}!`;
     case "context":
       return "어디서 들었어?";
-    case "choose":
-      return state.heardContext
-        ? `${contextOption(state.heardContext)?.reply} 이 중에 있어?`
-        : "괜찮아! 이 중에 있어?";
+    case "choose": {
+      // 되묻기 화면(Figma 5)은 따로 두지 않고 그 안내 문구만 여기서 쓴다 (D1).
+      const reply = state.heardContext ? contextOption(state.heardContext)?.reply : "괜찮아!";
+      return `${reply} 모야가 잘 못 들었어요. 아래 단어 중에 골라봐요!`;
+    }
     case "explaining":
     case "saved":
       return state.entry.kidExplanation;
     case "unknown":
-      return "모야도 아직 몰라. 나중에 같이 알아보자";
+      return "모야가 아직 모르는 단어들이에요. 엄마, 아빠와 함께 이 단어들을 알아보세요!";
     case "blocked":
       return "그 말은 엄마·아빠한테 물어보자!";
     case "micDenied":
       return "마이크를 쓸 수 없어. 글자로 물어봐 줄래?";
     case "sttFailed":
-      return "다시 말해줄래?";
+      return "처음부터 다시 시도해봐!";
   }
 }
 
 export function AskScreen() {
   const [state, dispatch] = useReducer(askReducer, initialAskState);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const shownPhase = useRef(state.phase);
+  const [saveFailed, setSaveFailed] = useState(false);
 
-  // 화면이 바뀌면 제목으로 포커스를 옮겨, 키보드·스크린 리더 사용자가 새 화면 처음부터 진행하게 한다.
-  // 첫 화면에서는 옮기지 않는다 (이미 입력칸을 누른 아이의 포커스를 빼앗지 않도록).
-  useEffect(() => {
-    if (shownPhase.current === state.phase) return;
-    shownPhase.current = state.phase;
-    headingRef.current?.focus();
-  }, [state.phase]);
-
-  // 상태를 바꾸고, 설명(S5)·물어볼 단어(S6)에 들어서는 순간 한 번만 저장한다.
+  // 상태를 바꾸고, 물어볼 단어(S6)에 들어서는 순간 한 번만 자동 저장한다.
+  // 단어 카드는 자동 저장하지 않고 [내 단어장에 저장하기]로 저장한다 (D4, saveCard).
   // 저장에 실패해도 흐름은 그대로 진행한다 (word-cards 스펙).
   function send(action: AskAction) {
     const next = askReducer(state, action);
     dispatch(action);
-
-    if (next.phase === "explaining" && state.phase !== "explaining") {
-      const saved = addCard({
-        id: newId(),
-        wordEntryId: next.entry.id,
-        word: next.entry.word,
-        dictDefinition: next.entry.dictDefinition,
-        kidExplanation: next.entry.kidExplanation,
-        example: next.entry.example,
-        heardContext: next.heardContext,
-        spokenAs: next.spokenAs,
-        createdAt: new Date().toISOString(),
-      });
-      if (saved) dispatch({ type: "cardSaved" });
-    }
+    setSaveFailed(false);
 
     if (next.phase === "unknown" && state.phase !== "unknown") {
       const saved = addPending({
@@ -129,34 +113,68 @@ export function AskScreen() {
     }
   }
 
+  function saveCard() {
+    if (state.phase !== "explaining") return;
+    const saved = addCard({
+      id: newId(),
+      wordEntryId: state.entry.id,
+      word: state.entry.word,
+      dictDefinition: state.entry.dictDefinition,
+      kidExplanation: state.entry.kidExplanation,
+      example: state.entry.example,
+      heardContext: state.heardContext,
+      spokenAs: state.spokenAs,
+      createdAt: new Date().toISOString(),
+    });
+    if (saved) dispatch({ type: "cardSaved" });
+    else setSaveFailed(true);
+  }
+
   const ask = (text: string) => send({ type: "recognized", transcripts: [text] });
   const restart = () => send({ type: "restart" });
+  const showCard = state.phase === "explaining" || state.phase === "saved";
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
-      <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold break-keep">
+      {/* "<"는 홈으로 간다. 페이지를 떠나면 흐름 상태도 사라지므로 restart와 같다. */}
+      <BackHeader href="/app" backLabel="홈" focusKey={state.phase}>
         {heading(state)}
-      </h1>
+      </BackHeader>
 
-      {/* 모야 자리 (캐릭터는 디자인 작업에서) + 대사 */}
-      <section aria-label="모야" className="rounded-lg border-2 border-dashed border-current p-4">
-        <p className="text-sm">모야</p>
-        <p aria-live="polite" className="text-lg break-keep">
-          {moyaLine(state)}
-        </p>
-      </section>
+      {/* 모야 자리 + 대사. 단어 카드(S5)에서는 카드 안의 "○○이 뭐야?"가 그 역할을 한다 */}
+      {!showCard && (
+        <section aria-label="모야" className="flex flex-col gap-2">
+          <ImageSlot label="모야 캐릭터 자리" className="h-24" />
+          <p aria-live="polite" className="text-lg break-keep">
+            {moyaLine(state)}
+          </p>
+        </section>
+      )}
 
-      {/* S1 묻기 대기 · E1 마이크 거부 · E2 인식 실패 */}
+      {/* S1 묻기 대기 (Figma 3). 마이크는 작업 10.3에서 연결한다 */}
+      {state.phase === "idle" && (
+        <>
+          <ImageSlot label="소리 파형 자리" className="h-16" />
+          <Button disabled aria-describedby="mic-soon">
+            녹음 시작
+          </Button>
+          <p id="mic-soon" className="-mt-3 text-sm break-keep">
+            마이크는 곧 연결돼요. 지금은 글자나 예시로 물어봐!
+          </p>
+        </>
+      )}
+
+      {/* E2 다시 말하기 안내 (Figma 4). 다시 말하기 횟수는 그대로 둔다 (retry) */}
+      {state.phase === "sttFailed" && (
+        <Button onClick={() => send({ type: "retry" })}>다시 녹음하기</Button>
+      )}
+
+      {/* S1 · E1 · E2 폴백: 텍스트 입력 + 예시 버튼 (Figma에 없음, 시연 안정성) */}
       {(state.phase === "idle" || state.phase === "micDenied" || state.phase === "sttFailed") && (
         <>
           <QuestionForm onAsk={ask} />
           <ExamplePrompts onAsk={ask} />
-          {state.phase === "idle" && (
-            <>
-              <LinkButton href="/app/cards">단어장</LinkButton>
-              <PrivacyNotice />
-            </>
-          )}
+          {state.phase === "idle" && <PrivacyNotice />}
         </>
       )}
 
@@ -165,15 +183,26 @@ export function AskScreen() {
         <Button onClick={() => send({ type: "stopListening" })}>그만하기</Button>
       )}
 
-      {/* S3 확인 질문 */}
+      {/* S3 단어 확인 질문 (Figma 6) */}
       {state.phase === "confirm" && (
-        <div className="grid grid-cols-2 gap-2">
-          <Button onClick={() => send({ type: "confirmYes" })}>응</Button>
-          <Button onClick={() => send({ type: "reject" })}>아니야</Button>
-        </div>
+        <>
+          <section
+            aria-label="모야가 찾은 단어"
+            className="flex flex-col gap-2 rounded-lg border-2 border-current p-4"
+          >
+            <ImageSlot label="단어 그림 자리" />
+            <p className="text-3xl font-bold break-keep">{state.candidate.entry.word}</p>
+            <p className="break-keep">{state.candidate.entry.hint}</p>
+            <SoundButton label="음성 재생" ariaLabel={`${state.candidate.entry.word} 음성 재생`} />
+          </section>
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={() => send({ type: "confirmYes" })}>네, 맞아요</Button>
+            <Button onClick={() => send({ type: "reject" })}>아니에요</Button>
+          </div>
+        </>
       )}
 
-      {/* S4 맥락 질문 → 후보 고르기 */}
+      {/* S4 맥락 질문 (Figma에 없음, D2) → 후보 카드 선택 (Figma 7) */}
       {state.phase === "context" && (
         <ContextPicker onPick={(context) => send({ type: "pickContext", context })} />
       )}
@@ -185,49 +214,57 @@ export function AskScreen() {
         />
       )}
 
-      {/* S5 설명 */}
-      {(state.phase === "explaining" || state.phase === "saved") && (
+      {/* S5 단어 카드 (Figma 8). [내 단어장에 저장하기]를 눌러야 저장한다 (D4) */}
+      {showCard && (
         <>
-          <section aria-label="예문" className="flex flex-col gap-1">
-            <p className="font-semibold">이렇게 써</p>
-            <p className="break-keep">{state.entry.example}</p>
-          </section>
-          {state.heardContext && (
-            <p className="break-keep">{contextOption(state.heardContext)?.label}에서 들은 말이야.</p>
-          )}
-          {state.phase === "saved" && (
-            <p role="status" className="font-semibold">
-              단어장에 저장했어!
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <Button onClick={restart}>또 물어보기</Button>
-            <LinkButton href="/app/cards">단어장</LinkButton>
-          </div>
+          <WordCardView
+            word={state.entry.word}
+            kidExplanation={state.entry.kidExplanation}
+            example={state.entry.example}
+            heardContext={state.heardContext}
+          />
+          <Button onClick={saveCard} disabled={state.phase === "saved"}>
+            {state.phase === "saved" ? "저장했어!" : "내 단어장에 저장하기"}
+          </Button>
+          <p role="status" className="-mt-3 text-sm break-keep">
+            {state.phase === "saved" && <span className="sr-only">단어장에 저장했어!</span>}
+            {saveFailed && "저장하지 못했어. 다시 눌러 볼래?"}
+          </p>
+          <LinkButton href="/app/cards">단어 카드 목록으로</LinkButton>
+          {/* Figma에 없는 보조 버튼. 시연 때 장면을 이어서 보여주기 위해 둔다 */}
+          <Button onClick={restart} className="border-dashed">
+            또 물어보기
+          </Button>
         </>
       )}
 
-      {/* 부적절 단어 안내 (content-safety). 단어를 보여주거나 저장하지 않는다 */}
+      {/* 부적절 단어 안내 (content-safety, Figma에 없음). 단어를 보여주거나 저장하지 않는다 */}
       {state.phase === "blocked" && (
         <div className="grid grid-cols-2 gap-2">
           <Button onClick={restart}>또 물어보기</Button>
-          <LinkButton href="/app/cards">단어장</LinkButton>
+          <LinkButton href="/app/cards">단어 카드 목록</LinkButton>
         </div>
       )}
 
-      {/* S6 물어볼 단어 */}
+      {/* S6 물어볼 단어 안내 (Figma 9) */}
       {state.phase === "unknown" && (
         <>
-          <p className="text-xl font-bold">{state.spokenAs}</p>
-          {state.pendingSaved && (
-            <p role="status" className="font-semibold">
-              물어볼 단어에 적어 뒀어!
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <Button onClick={restart}>또 물어보기</Button>
-            <LinkButton href="/app/cards">단어장</LinkButton>
-          </div>
+          <section
+            aria-label="이번에 물은 말"
+            className="rounded-lg border-2 border-dashed border-current p-4"
+          >
+            <p className="text-xl font-bold break-keep">{state.spokenAs}</p>
+            {state.pendingSaved && (
+              <p role="status" className="text-sm font-semibold">
+                물어볼 단어에 적어 뒀어!
+              </p>
+            )}
+          </section>
+          <LinkButton href="/parent">보호자 모드로 가기</LinkButton>
+          {/* Figma에 없는 보조 버튼. 시연 때 장면을 이어서 보여주기 위해 둔다 */}
+          <Button onClick={restart} className="border-dashed">
+            또 물어보기
+          </Button>
         </>
       )}
     </main>
