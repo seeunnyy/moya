@@ -1,0 +1,51 @@
+schema: spec-driven
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
+
+context: |
+  서비스: 모야 — 만 5~8세 아이가 들은 단어를 "○○이 뭐야?"라고 음성으로 물으면, 외계인 친구 모야가 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 어휘 학습 모바일 웹 (2026 4호선톤 출품 MVP)
+  형태: 모바일 웹, 세로 375px 기준, 로그인 없음
+  기술 스택: Next.js (App Router), React, TypeScript, Tailwind CSS
+  제약:
+    - 해커톤 외부 API는 음성인식(STT) 하나. 음성 출력은 브라우저 내장 음성합성
+    - 설명·힌트는 미리 검수한 단어 데이터만 쓴다. 실행 중 LLM 생성·사전 API는 베타
+    - 아이 음성 원본은 저장하지 않는다. 인식 텍스트만 기기에 저장
+    - 새 의존성은 사용자 확인 후에만 추가
+  기획 원본: planning/md-design/01~05 (요구사항 ID FR-xx, NFR-xx, 화면 ID S/E, QA-xx)
+
+rules:
+  specs:
+    - 본문은 한국어, Requirement/Scenario/SHALL/MUST/GIVEN/WHEN/THEN 키워드는 영어로 유지
+    - 모든 Requirement에 Scenario를 1개 이상 작성
+    - 라이브러리·함수명 등 구현 세부는 쓰지 않고 design.md로 보낸다
+  tasks:
+    - 각 작업에 확인 방법을 적는다
