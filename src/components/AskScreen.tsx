@@ -115,24 +115,25 @@ export function AskScreen({ micDenied = false }: Props) {
     dispatch(action);
   }
 
-  // 상태를 바꾸고, 물어볼 단어(S6)에 들어서는 순간 한 번만 자동 저장한다.
-  // 단어 카드는 자동 저장하지 않고 [내 단어장에 저장하기]로 저장한다 (D4, saveCard).
-  // 저장에 실패해도 흐름은 그대로 진행한다 (word-cards 스펙).
+  // 상태를 바꾼다. 저장은 자동으로 하지 않는다: 단어 카드(S5)와 물어볼 단어(S6) 모두
+  // [내 단어장에 저장하기]를 눌러야 저장한다 (D4, saveCard·savePending).
   function send(action: AskAction) {
-    const prev = current.current;
     apply(action);
-    const next = current.current;
     setSaveFailed(false);
+  }
 
-    if (next.phase === "unknown" && prev.phase !== "unknown") {
-      const saved = addPending({
-        id: newId(),
-        spokenAs: next.spokenAs,
-        heardContext: next.heardContext,
-        createdAt: new Date().toISOString(),
-      });
-      if (saved) apply({ type: "pendingSaved" });
-    }
+  // S6 [내 단어장에 저장하기]. 실패해도 흐름은 그대로, 다시 누를 수 있다 (word-cards 스펙).
+  function savePending() {
+    const now = current.current;
+    if (now.phase !== "unknown" || now.pendingSaved) return;
+    const saved = addPending({
+      id: newId(),
+      spokenAs: now.spokenAs,
+      heardContext: now.heardContext,
+      createdAt: new Date().toISOString(),
+    });
+    if (saved) apply({ type: "pendingSaved" });
+    setSaveFailed(!saved);
   }
 
   // 화면을 떠나면 녹음을 멈추고 마이크를 닫는다 (녹음 내용은 보내지 않는다).
@@ -224,7 +225,7 @@ export function AskScreen({ micDenied = false }: Props) {
       createdAt: new Date().toISOString(),
     });
     if (saved) apply({ type: "cardSaved" });
-    else setSaveFailed(true);
+    setSaveFailed(!saved);
   }
 
   const ask = (text: string) => send({ type: "recognized", transcripts: [text] });
@@ -361,13 +362,15 @@ export function AskScreen({ micDenied = false }: Props) {
             className="rounded-lg border-2 border-dashed border-current p-4"
           >
             <p className="text-xl font-bold break-keep">{state.spokenAs}</p>
-            {state.pendingSaved && (
-              <p role="status" className="text-sm font-semibold">
-                물어볼 단어에 적어 뒀어!
-              </p>
-            )}
           </section>
-          <LinkButton href="/parent">보호자 모드로 가기</LinkButton>
+          {/* 물어볼 단어도 눌러야 저장한다. 버튼 이름은 단어 카드(S5)와 같다 */}
+          <Button onClick={savePending} disabled={state.pendingSaved}>
+            {state.pendingSaved ? "물어볼 단어에 적어 뒀어!" : "내 단어장에 저장하기"}
+          </Button>
+          <p role="status" className="-mt-3 text-sm break-keep">
+            {state.pendingSaved && <span className="sr-only">물어볼 단어에 적어 뒀어!</span>}
+            {saveFailed && "저장하지 못했어. 다시 눌러 볼래?"}
+          </p>
           {/* Figma에 없는 보조 버튼. 시연 때 장면을 이어서 보여주기 위해 둔다 */}
           <Button onClick={restart} className="border-dashed">
             또 물어보기
