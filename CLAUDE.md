@@ -58,7 +58,7 @@ Do not add:
 - real-time collaboration
 - large file upload
 - 아이 음성 원본 저장 (인식된 텍스트만 저장)
-- 해커톤에서 음성인식 외의 외부 API. 음성 출력은 브라우저 내장 speechSynthesis를 쓴다. 사전 API·LLM 실시간 설명·맥락 재순위는 베타. 연동은 mock으로 흐름을 먼저 확인한 뒤 실제 API로 교체한다.
+- 해커톤에서 음성인식 외의 외부 API. 음성 출력은 브라우저 내장 speechSynthesis를 쓴다. 사전 API·LLM 실시간 설명·LLM 재순위는 베타 (MVP의 맥락 단서는 상황 버튼 + 단어 데이터의 상황 태그로 처리). 연동은 mock으로 흐름을 먼저 확인한 뒤 실제 API로 교체한다.
 
 ## References
 - Follow docs/PRD.md for scope.
