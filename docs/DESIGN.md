@@ -12,8 +12,10 @@
 
 ## Main Screens
 - Landing Page (/): 부모·심사위원 대상 서비스 소개
-- Ask (/app): 마이크로 묻기 → 되묻기(후보 고르기) → 단어 설명 듣기
-- Word Cards (/app/cards): 아이가 저장한 단어 카드 모음
+- Home (/app): 아이 모드 홈 — 물어보기, 단어 카드, 복습하기(베타), 하단 탭
+- Mic (/app/mic): 마이크 권한 안내
+- Ask (/app/ask): 마이크로 묻기 → 되묻기(후보 고르기) → 단어 카드 보고 저장하기
+- Word Cards (/app/cards, /app/cards/[id]): 아이가 저장한 단어 카드 목록과 상세
 - Parent Report (/parent): 주간 학습 기록 (2순위, 자리만)
 
 ## UI Rules

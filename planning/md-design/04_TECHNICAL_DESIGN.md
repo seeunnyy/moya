@@ -14,8 +14,11 @@
 | 경로 | 화면 (03) | 비고 |
 |---|---|---|
 | / | S0 | |
-| /app | S1~S6, E1, E2 | 한 페이지 안에서 상태로 전환 (§4) |
-| /app/cards | S7 | |
+| /app | S9 아이 모드 홈 | 하단 탭 |
+| /app/mic | S10 마이크 권한 안내 | |
+| /app/ask | S1~S6, E1, E2 | 한 페이지 안에서 상태로 전환 (§4) |
+| /app/cards | S7 | 하단 탭 |
+| /app/cards/[id] | S11 단어 카드 상세 | id = WordCard.id. 없으면 안내 + 목록으로 |
 | /parent | S8 | 베타, 자리만 |
 
 ### API (서버 전용, 키 보호)
@@ -135,16 +138,17 @@ type PronunciationRule = {
 ```
 
 ## 4. State
-`/app`은 `useReducer` 상태 기계 하나로 관리한다. 상태 관리 라이브러리는 추가하지 않는다.
+`/app/ask`는 `useReducer` 상태 기계 하나로 관리한다. 상태 관리 라이브러리는 추가하지 않는다.
 
 ```
 idle → listening → thinking ─┬→ confirm ──────────┬→ explaining → saved → idle
                              ├→ context → choose ─┘
                              └→ unknown → idle
-오류: micDenied, sttFailed
+오류: micDenied, sttFailed (→ retry로 idle, retryCount 유지)
 ```
 
-- confirm이나 choose에서 [아니야] / [다 아니야]를 고르면 `retryCount`가 0일 때 idle로 돌아가 다시 말하게 한다. `retryCount`가 1이면 unknown으로 간다.
+- explaining → saved는 S5의 [내 단어장에 저장하기]로 저장에 성공했을 때만 일어난다.
+- confirm이나 choose에서 [아니에요] / [여기 없어요]를 고르면 `retryCount`가 0일 때 idle로 돌아가 다시 말하게 한다. `retryCount`가 1이면 unknown으로 간다.
 
 | 상태 | 화면 (03) | MoyaCharacter |
 |---|---|---|
