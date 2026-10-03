@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 키보드 포커스가 항상 보이게 한다 (NFR-08). 색은 디자인 작업에서 정한다. */
+:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* 화면 전환 때 코드로 포커스를 옮기는 제목은 조작 대상이 아니라 테두리를 그리지 않는다. */
+[tabindex="-1"]:focus {
+  outline: none;
+}

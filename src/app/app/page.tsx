@@ -1,3 +1,5 @@
+import { AskScreen } from "@/components/AskScreen";
+
 export default function AskPage() {
-  return <h1>묻기</h1>;
+  return <AskScreen />;
 }
