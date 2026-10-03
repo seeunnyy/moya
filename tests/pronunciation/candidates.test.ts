@@ -6,7 +6,8 @@ import {
   orderByContext,
 } from "../../src/lib/pronunciation/candidates.ts";
 import type { Candidate, CandidateResult } from "../../src/types/index.ts";
-import { MOCK_ENTRIES, makeEntry } from "./fixtures.ts";
+import { MOCK_WORDS } from "../../src/data/words.mock.ts";
+import { makeEntry } from "./fixtures.ts";
 
 const words = (candidates: Candidate[]) => candidates.map((c) => c.entry.word);
 
@@ -18,23 +19,23 @@ function expectConfirm(result: CandidateResult, word: string, distance: number) 
 }
 
 test("두박 → 수박 거리 0, 확인 질문 (R1)", () => {
-  expectConfirm(inferWord(["두박"], MOCK_ENTRIES), "수박", 0);
+  expectConfirm(inferWord(["두박"], MOCK_WORDS), "수박", 0);
 });
 
 test("대풍 → 태풍 거리 0, 확인 질문 (R3)", () => {
-  expectConfirm(inferWord(["대풍"], MOCK_ENTRIES), "태풍", 0);
+  expectConfirm(inferWord(["대풍"], MOCK_WORDS), "태풍", 0);
 });
 
 test("저그통 → 저금통 거리 1, 확인 질문 (받침 생략)", () => {
-  expectConfirm(inferWord(["저그통"], MOCK_ENTRIES), "저금통", 1);
+  expectConfirm(inferWord(["저그통"], MOCK_WORDS), "저금통", 1);
 });
 
 test("공룡 → 공룡 거리 0, 확인 질문", () => {
-  expectConfirm(inferWord(["공룡"], MOCK_ENTRIES), "공룡", 0);
+  expectConfirm(inferWord(["공룡"], MOCK_WORDS), "공룡", 0);
 });
 
 test("가바 → 가방·가발 둘 다 거리 1, 고르기", () => {
-  const result = inferWord(["가바"], MOCK_ENTRIES);
+  const result = inferWord(["가바"], MOCK_WORDS);
   assert.equal(result.kind, "choose");
   if (result.kind !== "choose") return;
   assert.deepEqual(words(result.candidates), ["가방", "가발"]);
@@ -42,18 +43,18 @@ test("가바 → 가방·가발 둘 다 거리 1, 고르기", () => {
 });
 
 test("가바 + [TV] → 가발 먼저", () => {
-  const ordered = orderByContext(findCandidates(["가바"], MOCK_ENTRIES), "tv");
+  const ordered = orderByContext(findCandidates(["가바"], MOCK_WORDS), "tv");
   assert.deepEqual(words(ordered), ["가발", "가방"]);
   assert.equal(ordered[0].contextMatch, true);
 });
 
 test("가바 + [유치원·학교] → 가방 먼저", () => {
-  const ordered = orderByContext(findCandidates(["가바"], MOCK_ENTRIES), "school");
+  const ordered = orderByContext(findCandidates(["가바"], MOCK_WORDS), "school");
   assert.deepEqual(words(ordered), ["가방", "가발"]);
 });
 
 test("가바 + [모르겠어] → 거리 순서 그대로, 상황 기록 없음", () => {
-  const candidates = findCandidates(["가바"], MOCK_ENTRIES);
+  const candidates = findCandidates(["가바"], MOCK_WORDS);
   const ordered = orderByContext(candidates, undefined);
   assert.deepEqual(words(ordered), ["가방", "가발"]);
   assert.ok(ordered.every((c) => c.contextMatch === undefined));
@@ -67,11 +68,11 @@ test("상황이 맞아도 발음상 더 먼 단어는 앞서지 않는다", () =
 });
 
 test("뿌잉뿌잉 → 후보 없음", () => {
-  assert.deepEqual(inferWord(["뿌잉뿌잉"], MOCK_ENTRIES), { kind: "unknown" });
+  assert.deepEqual(inferWord(["뿌잉뿌잉"], MOCK_WORDS), { kind: "unknown" });
 });
 
 test("대상 단어가 없으면 후보 없음", () => {
-  assert.deepEqual(inferWord([], MOCK_ENTRIES), { kind: "unknown" });
+  assert.deepEqual(inferWord([], MOCK_WORDS), { kind: "unknown" });
 });
 
 test("거리 기준 이하 4개 이상이면 가까운 3개만", () => {
@@ -86,7 +87,7 @@ test("거리 기준 이하 4개 이상이면 가까운 3개만", () => {
 });
 
 test("두박 + 수박 합치기 → 수박은 한 번, 거리 0", () => {
-  const candidates = findCandidates(["두박", "수박"], MOCK_ENTRIES);
+  const candidates = findCandidates(["두박", "수박"], MOCK_WORDS);
   assert.deepEqual(words(candidates), ["수박"]);
   assert.equal(candidates[0].distance, 0);
 });

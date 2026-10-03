@@ -16,8 +16,8 @@
 
 ## 3. mock 데이터 (word-explanation 데이터 형식)
 
-- [ ] 3.1 `src/data/words.mock.ts`에 05 §3의 10개 단어를 WordEntry 형식(힌트, 상황 태그, 쉬운 설명, 예문, 사전 뜻, 출처 "mock", reviewed=false)으로 작성하고 파일 맨 위에 "mock, 검수 전"을 명시. 데이터 전체로 2.5 테스트가 통과하는지 확인
-- [ ] 3.2 `src/data/examplePrompts.ts`에 데모 시나리오 문장([두박이 뭐야?], [가바가 뭐야?], [뿌잉뿌잉이 뭐야?])을, `src/data/blocklist.ts`에 테스트용 mock 항목 1개를 두고 타입 검사가 통과하는지 확인
+- [x] 3.1 `src/data/words.mock.ts`에 05 §3의 10개 단어를 WordEntry 형식(힌트, 상황 태그, 쉬운 설명, 예문, 사전 뜻, 출처 "mock", reviewed=false)으로 작성하고 파일 맨 위에 "mock, 검수 전"을 명시. 데이터 전체로 2.5 테스트가 통과하는지 확인
+- [x] 3.2 `src/data/examplePrompts.ts`에 데모 시나리오 문장([두박이 뭐야?], [가바가 뭐야?], [뿌잉뿌잉이 뭐야?])을, `src/data/blocklist.ts`에 테스트용 mock 항목 1개를 두고 타입 검사가 통과하는지 확인
 
 ## 4. 저장소 (word-cards, privacy-notice)
 
