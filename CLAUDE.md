@@ -20,7 +20,7 @@ This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 �
 - GitHub
 
 ## Current Stage
-Session 3: OpenSpec `add-word-question-mvp` 구현 중 — 21/32 완료(그룹 1~7, 외부 API 없이 핵심 흐름 관통 끝). 다음: 작업 8.1 예시 버튼 (상세는 planning/HANDOFF.md)
+Session 4: OpenSpec `add-word-question-mvp` 구현 중 — 24/39 완료(그룹 1~8). Figma 와이어프레임 반영으로 그룹 12(화면 플로우 재구성) 추가. 다음: 그룹 12 → 10.1~10.4 마이크 → 9.1 소리 (상세는 planning/HANDOFF.md)
 
 ## Working Rules
 - Read relevant files before suggesting changes.
