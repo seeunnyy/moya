@@ -14,6 +14,11 @@ type Props = {
   spokenAs?: string; // 카드 상세에서만 넘긴다. "처음엔 '두박'이라고 물어봤어"
 };
 
+// 단어 카드를 소리로 읽을 문장: "수박이 뭐야? <쉬운 설명>". S5에 들어설 때와 [🔈 들어보기]가 같은 문장을 읽는다.
+export function cardSpeech(word: string, kidExplanation: string): string {
+  return `${word}${hasFinalConsonant(word) ? "이" : "가"} 뭐야? ${kidExplanation}`;
+}
+
 // 마지막 글자에 받침이 있는지. 조사(이/가, 이라고/라고)를 고를 때 쓴다.
 function hasFinalConsonant(word: string): boolean {
   const last = word.charCodeAt(word.length - 1);
@@ -41,7 +46,11 @@ export function WordCardView({ word, kidExplanation, example, heardContext, spok
       {heardContext && (
         <p className="text-sm break-keep">{contextOption(heardContext)?.label}에서 들은 말이야.</p>
       )}
-      <SoundButton label="🔈 들어보기" ariaLabel={`${word} 설명 들어보기`} />
+      <SoundButton
+        label="🔈 들어보기"
+        text={cardSpeech(word, kidExplanation)}
+        ariaLabel={`${word} 설명 들어보기`}
+      />
     </article>
   );
 }

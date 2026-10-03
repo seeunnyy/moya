@@ -8,6 +8,7 @@ import { BLOCKED_WORDS } from "@/data/blocklist";
 import { MOCK_WORDS } from "@/data/words.mock";
 import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
 import { MAX_RECORDING_MS } from "@/lib/config";
+import { speaker } from "@/lib/services/speech";
 import { addCard, addPending } from "@/lib/storage";
 import { BackHeader } from "./BackHeader";
 import { Button, LinkButton } from "./Button";
@@ -20,7 +21,7 @@ import { PrivacyNotice } from "./PrivacyNotice";
 import { contextOption } from "./heardContext";
 import { QuestionForm } from "./QuestionForm";
 import { SoundButton } from "./SoundButton";
-import { WordCardView } from "./WordCardView";
+import { cardSpeech, WordCardView } from "./WordCardView";
 
 const askReducer = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
 
@@ -58,13 +59,13 @@ function heading(state: AskState): string {
   }
 }
 
-// 모야의 대사 (aria-live로 읽힘). 음성 출력은 9.1에서 같은 문장으로 붙인다.
+// 모야의 대사 (aria-live로 읽힘). 소리로는 speechLine이 같은 문장을 읽는다.
 function moyaLine(state: AskState): string {
   switch (state.phase) {
     case "idle":
       return state.retryCount > 0
         ? "그럼 한 번 더 말해 줄래?"
-        : "궁금한 말이 있어? \"○○이 뭐야?\" 하고 물어봐!";
+        : "궁금한 말이 있어? \"공룡이 뭐야?\"처럼 물어봐!";
     case "listening":
       return "듣고 있어…";
     case "thinking":
@@ -89,6 +90,22 @@ function moyaLine(state: AskState): string {
       return "마이크를 쓸 수 없어. 글자로 물어봐 줄래?";
     case "sttFailed":
       return "처음부터 다시 시도해봐!";
+  }
+}
+
+// 소리로 읽을 문장. 화면의 모야 대사와 같다.
+// 듣는 중·생각 중에는 읽지 않는다 (모야 목소리가 녹음에 들어가지 않게).
+// 단어 카드(S5)는 대사 영역 대신 카드의 "○○이 뭐야? <쉬운 설명>"을 읽는다.
+function speechLine(state: AskState): string | null {
+  switch (state.phase) {
+    case "listening":
+    case "thinking":
+      return null;
+    case "explaining":
+    case "saved":
+      return cardSpeech(state.entry.word, state.entry.kidExplanation);
+    default:
+      return moyaLine(state);
   }
 }
 
@@ -141,6 +158,7 @@ export function AskScreen({ micDenied = false }: Props) {
     left.current = false;
     return () => {
       left.current = true;
+      speaker.stop();
       const r = recording.current;
       recording.current = null;
       if (!r) return;
@@ -152,6 +170,7 @@ export function AskScreen({ micDenied = false }: Props) {
 
   // [녹음 시작] (S1 → S2 듣는 중). 마이크를 못 쓰면 E1.
   async function startRecording() {
+    speaker.stop(); // 모야 목소리가 녹음에 섞이지 않게 먼저 멈춘다
     const stream = await openMic();
     if (left.current) {
       if (stream) closeMic(stream);
@@ -232,6 +251,13 @@ export function AskScreen({ micDenied = false }: Props) {
   const restart = () => send({ type: "restart" });
   const showCard = state.phase === "explaining" || state.phase === "saved";
 
+  // 화면(대사)이 바뀌면 모야가 그 문장을 소리로 읽는다. 미지원 기기에서는 아무 일도 없다 (FR-08).
+  // 저장해서 explaining → saved가 돼도 문장이 같으니 다시 읽지 않는다.
+  const spoken = speechLine(state);
+  useEffect(() => {
+    if (spoken) speaker.speak(spoken);
+  }, [spoken]);
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
       {/* "<"는 홈으로 간다. 페이지를 떠나면 흐름 상태도 사라지므로 restart와 같다. */}
@@ -301,7 +327,11 @@ export function AskScreen({ micDenied = false }: Props) {
             <ImageSlot label="단어 그림 자리" />
             <p className="text-3xl font-bold break-keep">{state.candidate.entry.word}</p>
             <p className="break-keep">{state.candidate.entry.hint}</p>
-            <SoundButton label="음성 재생" ariaLabel={`${state.candidate.entry.word} 음성 재생`} />
+            <SoundButton
+              label="음성 재생"
+              text={`${state.candidate.entry.word}. ${state.candidate.entry.hint}`}
+              ariaLabel={`${state.candidate.entry.word} 음성 재생`}
+            />
           </section>
           <div className="grid grid-cols-2 gap-2">
             <Button onClick={() => send({ type: "confirmYes" })}>네, 맞아요</Button>
