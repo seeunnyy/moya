@@ -1,4 +1,4 @@
-# 모야 인수인계 (2026-10-03 20:00 기준)
+# 모야 인수인계 (2026-10-03 20:21 기준, 작업 7.1 커밋 시점)
 
 > 이 문서를 읽는 AI에게: 이 프로젝트를 이어받아 구현을 계속한다.
 > 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md` 순으로 읽고,
@@ -13,13 +13,13 @@
 | 서비스 | 모야 — 만 5~8세 아이가 "○○이 뭐야?"라고 물으면, 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 모바일 웹 (2026 4호선톤 출품 MVP) |
 | 저장소 | `github.com/seeunnyy/moya`, 브랜치 `main` / 로컬: `C:\Users\arong\moya` (Windows) |
 | 스택 | Next.js 16.3.8 (App Router), React 19.2.8, TypeScript, Tailwind CSS 4. 추가 의존성 없음 |
-| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 64개 전부 통과 (인수인계 시점 사본으로 확인) |
+| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 64개 전부 통과 (7.1에서 test·lint·build 통과 확인) |
 | 작업 방식 | OpenSpec spec-driven. 진행 중인 change는 `add-word-question-mvp` 하나 |
-| 진행률 | tasks.md 32개 중 **19개 완료** (그룹 1~5) |
-| 커밋 | 그룹 5까지 커밋됨. 마지막 커밋: `feat: /app 묻기 흐름 상태 기계와 S1~S6·E2 화면 (작업 5.1~5.7)` |
-| 다음 할 일 | **작업 6.1 단어장(`/app/cards`)** → 7.1 오늘 범위 통합 확인 |
+| 진행률 | tasks.md 32개 중 **21개 완료** (그룹 1~7, 오늘 범위 끝) |
+| 커밋 | 그룹 7까지 커밋됨. 마지막 커밋: `docs(openspec): 오늘 범위 통합 확인 완료 표시 (작업 7.1)` |
+| 다음 할 일 | **작업 8.1 예시 버튼(S1·E1·E2)** → 8.2 고지 → 8.3 부적절 단어 |
 
-미커밋 변경: 파일 수정 시각으로 보면 마지막 커밋 이후 바뀐 소스는 없다. `git status`로 다시 확인할 것.
+미커밋 변경: 없음 (7.1 커밋 직후 기준). `git status`로 다시 확인할 것.
 
 ---
 
@@ -100,7 +100,8 @@
 | `src/components/AskScreen.tsx` | `/app` 화면. 상태별 S1~S6·E2 표시, S5·S6 진입 시 한 번 저장 | 5.2~5.7 |
 | `src/components/{Button,QuestionForm,ContextPicker,CandidatePicker,heardContext}` | 최소 스타일 UI. 버튼 48px 이상, 글자 필수 | 5.x |
 | `src/app/app/page.tsx` | `<AskScreen />` | 5.x |
-| `src/app/app/cards/page.tsx` | **h1만 있는 빈 화면** → 6.1에서 구현 | — |
+| `src/components/CardsScreen.tsx` | `/app/cards` 화면(S7). 카드 목록·물어볼 단어 목록·빈 상태. 마운트 후 localStorage 읽기 | 6.1 |
+| `src/app/app/cards/page.tsx` | `<CardsScreen />` | 6.1 |
 | `src/app/page.tsx`, `src/app/parent/page.tsx` | h1만 (S0은 11.1, S8은 베타) | — |
 | `tests/**` | jamo, distance, rules, extract, candidates, words.mock, examplePrompts, storage, askFlow, config | — |
 
@@ -117,9 +118,9 @@
 
 | 작업 | 내용 | 시점 | 메모 |
 |---|---|---|---|
-| **6.1** | `/app/cards`: 카드 목록, 물어볼 단어 목록, 빈 상태 (QA-07, QA-08) | 오늘 범위 | `readCards()`/`readPending()` 사용. localStorage는 클라이언트에서만 읽어야 하므로 서버 렌더링과 어긋나지 않게 처리(클라이언트 컴포넌트 + 마운트 후 읽기). 스펙: `specs/word-cards/spec.md` |
-| **7.1** | 375px에서 S1~S7 가로 스크롤 없음(QA-09) + test·lint·build | 오늘 범위 | 수동 QA-01~10을 이때 함께 확인 (아래 6번 참고) |
-| 8.1 | S1·E1·E2에 예시 버튼 (QA-11) | 11/5 전 | `EXAMPLE_PROMPTS` 연결 |
+| ~~6.1~~ | ~~`/app/cards` 단어장~~ | 완료 | `2c8db68` |
+| ~~7.1~~ | ~~375px 확인(QA-09) + test·lint·build~~ | 완료 | `647bec6`. QA-01~08·10 확인 |
+| **8.1** | S1·E1·E2에 예시 버튼 (QA-11) | 11/5 전 | `EXAMPLE_PROMPTS` 연결 |
 | 8.2 | S1·S7 저장·전송 고지 (QA-12) | 11/5 전 | 문구는 03 §3 잠정안 |
 | 8.3 | 부적절 단어 → "엄마·아빠한테 물어보자", 저장 안 함 | 11/5 전 | `BLOCKED_WORDS` 연결 |
 | 9.1 | speechSynthesis 래퍼 (ko-KR, 미지원 시 무동작) | 11/5 전 | 모야 대사·설명·후보·[다시 듣기] |
@@ -127,16 +128,15 @@
 | 10.5 | 실제 STT 연동 | **보류** | STT 확정(~10/22) 전에는 하지 않는다 |
 | 11.1~11.2 | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | 11/5 전 | 05 §5 |
 
-오늘 범위(05 §2)는 6.1과 7.1만 남았다.
+오늘 범위(05 §2)는 끝났다. 다음은 1차 배포(11/5) 전 작업인 8.1부터.
 
 ---
 
 ## 6. 확인이 필요한 것
 
-1. **브라우저 수동 QA 기록이 없다.** tasks.md 5.2~5.7은 "브라우저에서 확인"으로 체크돼 있지만, 사람이 실제로 눌러 봤다는 기록은 없다. 7.1에서 `npm run dev`를 띄워 QA-01~QA-10을 사용자와 함께 확인한다.
-2. **빌드 재확인.** 그룹 5에서 처음으로 페이지가 `src/lib`를 import했다(`.ts` 확장자 import가 Next 빌드와 충돌할 수 있는 지점). 커밋 규칙상 빌드 통과 후 커밋된 것으로 보이지만, 시작할 때 `npm run build`로 다시 확인한다. 충돌하면 design.md Risks대로 확장자 없는 import로 되돌리고 사용자에게 보고한다.
+1. **수동 QA는 7.1에서 확인됨.** 커밋 메시지 기준: 375px에서 S1·S3~S7·E2 가로 넘침 없음(QA-09), QA-01~08·10 확인. QA-11·12는 8.1·8.2에서 확인한다.
+2. **빌드는 7.1에서 통과.** 페이지가 `src/lib`를 `.ts` 확장자로 import해도 Next 빌드가 통과했다. 이후 import가 늘어나 충돌하면 design.md Risks대로 확장자 없는 import로 되돌리고 사용자에게 보고한다.
 3. **문서가 실제와 어긋난 곳** (고치기 전에 사용자 확인):
-   - `CLAUDE.md` "Current Stage"가 아직 "Session 2: 설계 문서 작성 완료"다.
    - 05 §2는 "단위 테스트 도구 설치 안 함, 수동 QA만"이라고 돼 있지만 실제로는 Node 내장 러너로 테스트를 만들었다(새 패키지 없음, design.md에 결정 기록).
    - tasks.md 1.3의 test 스크립트(`node --test tests/`)와 실제(`node --test "tests/**/*.test.ts"`)가 다르다. Node 26에서 폴더 지정이 실패해서 바꿨다.
 4. **readiness-check 스킬은 없다.** 설계 질문만 오갔고 `.claude/skills/`에 파일이 생기지 않았다. 있는 스킬: `planning-review`, `md-to-openspec`, `openspec-*`.
@@ -153,6 +153,7 @@
 | 지시어만 있는 질문("이게 뭐야", "저거 뭐야") | 지금은 "이게"를 단어로 꺼내 물어볼 단어로 저장됨 | 녹음 테스트 후 |
 | 같은 거리 후보 순서 | 데이터 순서 ("가바" → 가방 먼저) | 데이터 교체 시 |
 | '이'로 끝나는 단어(고양이) 추출 | 예외 처리 없음 | 데이터 교체 시 |
+| 단어장 정렬·중복 카드 | 최근 저장 순, 같은 단어 다시 물으면 카드 한 장 더 (중복 제거 없음) | 반복 학습(베타) |
 | 배포 환경 | 미정 | 11/5 전 결정 |
 
 ---
@@ -179,4 +180,4 @@
 2. `git status`, `git log --oneline -5`로 커밋 상태를 확인한다.
 3. `npm test`, `npm run lint`, `npm run build`를 실행한다.
 4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업).
-5. 사용자가 진행을 요청하면 작업 6.1부터 시작하고, 2번의 "진행 리듬"을 따른다.
+5. 사용자가 진행을 요청하면 작업 8.1부터 시작하고, 2번의 "진행 리듬"을 따른다.

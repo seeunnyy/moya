@@ -20,7 +20,7 @@ This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 �
 - GitHub
 
 ## Current Stage
-Session 2: 설계 문서 작성 완료 (planning/md-design). 다음: 외부 API 없이 핵심 흐름 관통 (05_DELIVERY_PLAN.md §2)
+Session 3: OpenSpec `add-word-question-mvp` 구현 중 — 21/32 완료(그룹 1~7, 외부 API 없이 핵심 흐름 관통 끝). 다음: 작업 8.1 예시 버튼 (상세는 planning/HANDOFF.md)
 
 ## Working Rules
 - Read relevant files before suggesting changes.
