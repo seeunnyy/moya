@@ -21,8 +21,8 @@
 
 ## 4. 저장소 (word-cards, privacy-notice)
 
-- [ ] 4.1 `src/lib/storage`에 카드·물어볼 단어의 읽기·추가 함수를 `moya.cards.v1`, `moya.pending.v1` 키로 구현하고, 가짜 저장소로 저장→읽기, 손상된 JSON→빈 목록, 쓰기 예외→오류 없이 진행을 `tests/storage.test.ts`로 확인
-- [ ] 4.2 저장 데이터에 음성 데이터 필드가 없음을 타입과 테스트로 확인
+- [x] 4.1 `src/lib/storage`에 카드·물어볼 단어의 읽기·추가 함수를 `moya.cards.v1`, `moya.pending.v1` 키로 구현하고, 가짜 저장소로 저장→읽기, 손상된 JSON→빈 목록, 쓰기 예외→오류 없이 진행을 `tests/storage.test.ts`로 확인
+- [x] 4.2 저장 데이터에 음성 데이터 필드가 없음을 타입과 테스트로 확인
 
 ## 5. /app 흐름 — 텍스트 입력으로 끝까지 (05 §2 오늘 범위)
 
