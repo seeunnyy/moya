@@ -2,16 +2,16 @@
 
 ## 1. 기반: 타입, 설정, 테스트 러너
 
-- [ ] 1.1 `src/types`에 WordEntry, WordCard, PendingWord, Candidate, CandidateResult, PronunciationRule, HeardContext 타입을 04 §3대로 정의하고 `npx tsc --noEmit`이 통과하는지 확인
-- [ ] 1.2 `src/lib/config.ts`에 MAX_DISTANCE=2, MAX_CANDIDATES=3, MAX_RETRY=1을 두고, 다른 모듈이 이 값만 참조하는지 확인
-- [ ] 1.3 tsconfig에 `allowImportingTsExtensions`를 켜고 `package.json`에 `"test": "node --test tests/"` 스크립트를 추가한 뒤, 샘플 테스트 1개로 `npm test`와 `npm run build`가 둘 다 통과하는지 확인 (실패하면 design.md Risks대로 사용자에게 보고)
+- [x] 1.1 `src/types`에 WordEntry, WordCard, PendingWord, Candidate, CandidateResult, PronunciationRule, HeardContext 타입을 04 §3대로 정의하고 `npx tsc --noEmit`이 통과하는지 확인
+- [x] 1.2 `src/lib/config.ts`에 MAX_DISTANCE=2, MAX_CANDIDATES=3, MAX_RETRY=1을 두고, 다른 모듈이 이 값만 참조하는지 확인
+- [x] 1.3 tsconfig에 `allowImportingTsExtensions`를 켜고 `package.json`에 `"test": "node --test tests/"` 스크립트를 추가한 뒤, 샘플 테스트 1개로 `npm test`와 `npm run build`가 둘 다 통과하는지 확인 (실패하면 design.md Risks대로 사용자에게 보고)
 
 ## 2. 되묻기 순수 로직 (word-inference, voice-question 추출)
 
-- [ ] 2.1 `src/lib/pronunciation/jamo.ts` 자모 분해·조합을 구현하고, "공룡"·"저금통"·받침 없는 음절의 분해 결과를 `tests/pronunciation/jamo.test.ts`로 확인
-- [ ] 2.2 `distance.ts` 자모 편집거리를 구현하고, 가방↔가발=1, 저그통↔저금통=1, 같은 단어=0을 테스트로 확인
-- [ ] 2.3 `src/data/rules.ts`에 R1·R3 역규칙 표를, `rules.ts`에 변형 생성을 구현하고, "두박"→"수박", "대풍"→"태풍" 변형이 나오는지 테스트로 확인
-- [ ] 2.4 `extract.ts` 대상 단어 추출을 구현하고, "공룡이 뭐야?"→공룡, "가바가 뭐야"→가바, "공룡"·빈 문자열→실패를 테스트로 확인
+- [x] 2.1 `src/lib/pronunciation/jamo.ts` 자모 분해·조합을 구현하고, "공룡"·"저금통"·받침 없는 음절의 분해 결과를 `tests/pronunciation/jamo.test.ts`로 확인
+- [x] 2.2 `distance.ts` 자모 편집거리를 구현하고, 가방↔가발=1, 저그통↔저금통=1, 같은 단어=0을 테스트로 확인
+- [x] 2.3 `src/data/rules.ts`에 R1·R3 역규칙 표를, `rules.ts`에 변형 생성을 구현하고, "두박"→"수박", "대풍"→"태풍" 변형이 나오는지 테스트로 확인
+- [x] 2.4 `extract.ts` 대상 단어 추출을 구현하고, "공룡이 뭐야?"→공룡, "가바가 뭐야"→가바, "공룡"·빈 문자열→실패를 테스트로 확인
 - [ ] 2.5 `candidates.ts` 후보 분기(confirm/choose/unknown), 여러 입력 합치기, 상황 동점 정렬을 구현하고, word-inference 스펙의 시나리오(두박·대풍·저그통·가바+TV/학교/모르겠어·뿌잉뿌잉·4개 이상 제한·두박+수박 합치기)를 테스트로 확인
 
 ## 3. mock 데이터 (word-explanation 데이터 형식)
