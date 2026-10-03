@@ -1,4 +1,4 @@
-# 모야 인수인계 (2026-10-04 기준, 그룹 12 구현 완료 시점)
+# 모야 인수인계 (2026-10-04 기준, 작업 10.4 완료 시점)
 
 > 이 문서를 읽는 AI에게: 이 프로젝트를 이어받아 구현을 계속한다.
 > 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md` 순으로 읽고,
@@ -13,13 +13,15 @@
 | 서비스 | 모야 — 만 5~8세 아이가 "○○이 뭐야?"라고 물으면, 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 모바일 웹 (2026 4호선톤 출품 MVP) |
 | 저장소 | `github.com/seeunnyy/moya`, 브랜치 `main` / 로컬: `C:\Users\arong\moya` (Windows) |
 | 스택 | Next.js 16.3.8 (App Router), React 19.2.8, TypeScript, Tailwind CSS 4. 추가 의존성 없음 |
-| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 69개 전부 통과 (그룹 12 후 test·lint·build 통과 확인) |
+| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 73개 전부 통과 (10.4 후 test·lint·build 통과 확인) |
 | 작업 방식 | OpenSpec spec-driven. 진행 중인 change는 `add-word-question-mvp` 하나 |
-| 진행률 | tasks.md 39개 중 **31개 완료** (그룹 1~8, 12) |
-| 커밋 | 그룹 12까지 커밋됨 |
-| 다음 할 일 | **10.1~10.4 마이크** (권한 안내 [권한 허용하기]·[녹음 시작] 연결) → 9.1 소리 → 11 |
+| 진행률 | tasks.md 39개 중 **35개 완료** (그룹 1~8, 12, 10.1~10.4) |
+| 커밋 | 10.4까지 커밋·push됨 |
+| 다음 할 일 | **9.1 소리**(speechSynthesis) → 11. 10.5 실제 STT는 STT 확정(~10/22) 후 |
 
-미커밋 변경: 없음 (그룹 12 커밋 직후 기준). `git status`로 다시 확인할 것.
+미커밋 변경: 없음 (10.4 커밋 직후 기준).
+
+> 개발 서버가 떠 있을 때 `npm run build`를 돌리면 개발 서버가 깨진다(Jest worker 오류). 빌드 전에 개발 서버를 끈다. `git status`로 다시 확인할 것.
 
 > 화면 구조가 바뀐다: `/app`은 아이 모드 홈, 묻기 흐름은 `/app/ask`, 카드 상세 `/app/cards/[id]`, 마이크 권한 안내 `/app/mic`. 카드는 [내 단어장에 저장하기]로 저장(자동 저장 아님). 결정과 Figma와 다른 부분은 design.md "Figma 와이어프레임 반영", 화면 세부는 Open Questions "그룹 12 구현 중 정한 화면 세부".
 
@@ -108,6 +110,9 @@
 | `src/components/WordCardView.tsx` | 단어 카드 본문 (S5·S11 공용) | 12.5 |
 | `src/components/CardsScreen.tsx` | `/app/cards` 화면(S7). 2열 카드 그리드·물어볼 단어 목록·빈 상태 | 6.1, 12.6 |
 | `src/app/app/cards/[id]/page.tsx`, `src/components/CardDetailScreen.tsx` | 카드 상세(S11). 처음 물은 말 표시, 없는 id면 안내 | 12.6 |
+| `src/lib/services/stt/{types,mock,index}.ts` | STT 어댑터. `STT_PROVIDER`(기본 mock)로 고름. mock은 예시 문장을 차례로 돌려줌 | 10.1 |
+| `src/app/api/stt/route.ts` | `POST /api/stt` (multipart `audio`) → `{ transcripts, provider }` | 10.2 |
+| `src/components/microphone.ts`, `AskMoyaLink.tsx` | 마이크 열기·닫기·권한 확인, 홈에서 권한 허용된 기기는 권한 안내 건너뛰기 | 10.3~10.4 |
 | `src/components/useSavedWords.ts` | 저장된 카드·물어볼 단어 읽기 훅 (S7·S11, 서버에서는 null) | 12.6 |
 | `src/app/app/cards/page.tsx` | `<CardsScreen />` | 6.1 |
 | `src/app/page.tsx`, `src/app/parent/page.tsx` | h1만 (S0은 11.1, S8은 베타) | — |
@@ -131,11 +136,11 @@
 | ~~8.1~8.3~~ | ~~예시 버튼, 저장·전송 고지, 부적절 단어~~ | 완료 | `d093da3`, `ba09bf2` |
 | ~~12.1~12.7~~ | ~~Figma 와이어프레임 화면 플로우~~ | 완료 | 375px 브라우저 확인 |
 | 9.1 | speechSynthesis 래퍼 (ko-KR, 미지원 시 무동작) | 11/5 전 | 모야 대사·설명·후보·[다시 듣기] |
-| 10.1~10.4 | STT 어댑터(mock), `POST /api/stt`, MicButton(MediaRecorder), 권한 안내 [권한 허용하기]·E1 | 11/5 전 | 그룹 12 다음. mock으로 먼저 |
+| ~~10.1~10.4~~ | ~~STT 어댑터(mock), `POST /api/stt`, 녹음, 권한 안내·E1~~ | 완료 | mock은 예시 문장을 차례로 돌려줌 |
 | 10.5 | 실제 STT 연동 | **보류** | STT 확정(~10/22) 전에는 하지 않는다 |
 | 11.1~11.2 | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | 11/5 전 | 05 §5 |
 
-그룹 12까지 끝났다. 다음은 10.1~10.4 → 9.1 → 11 순서.
+그룹 12와 10.1~10.4까지 끝났다. 다음은 9.1 → 11 순서. 10.5는 STT 확정 후.
 
 ---
 
@@ -187,4 +192,4 @@
 2. `git status`, `git log --oneline -5`로 커밋 상태를 확인한다.
 3. `npm test`, `npm run lint`, `npm run build`를 실행한다.
 4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업).
-5. 사용자가 진행을 요청하면 작업 10.1부터 시작하고, 2번의 "진행 리듬"을 따른다.
+5. 사용자가 진행을 요청하면 작업 9.1부터 시작하고, 2번의 "진행 리듬"을 따른다.
