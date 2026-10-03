@@ -1,4 +1,4 @@
-# 모야 인수인계 (2026-10-04 기준, 작업 10.4 완료 시점)
+# 모야 인수인계 (2026-10-04 기준, 작업 9.1 완료 시점)
 
 > 이 문서를 읽는 AI에게: 이 프로젝트를 이어받아 구현을 계속한다.
 > 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md` 순으로 읽고,
@@ -13,13 +13,13 @@
 | 서비스 | 모야 — 만 5~8세 아이가 "○○이 뭐야?"라고 물으면, 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 모바일 웹 (2026 4호선톤 출품 MVP) |
 | 저장소 | `github.com/seeunnyy/moya`, 브랜치 `main` / 로컬: `C:\Users\arong\moya` (Windows) |
 | 스택 | Next.js 16.3.8 (App Router), React 19.2.8, TypeScript, Tailwind CSS 4. 추가 의존성 없음 |
-| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 73개 전부 통과 (10.4 후 test·lint·build 통과 확인) |
+| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 79개 전부 통과 (9.1 후 test·lint·build 통과 확인) |
 | 작업 방식 | OpenSpec spec-driven. 진행 중인 change는 `add-word-question-mvp` 하나 |
-| 진행률 | tasks.md 39개 중 **35개 완료** (그룹 1~8, 12, 10.1~10.4) |
-| 커밋 | 10.4까지 커밋·push됨 |
-| 다음 할 일 | **9.1 소리**(speechSynthesis) → 11. 10.5 실제 STT는 STT 확정(~10/22) 후 |
+| 진행률 | tasks.md 40개 중 **37개 완료** (그룹 1~9, 12, 10.1~10.4). 남은 것: 10.5(보류), 11.1, 11.2 |
+| 커밋 | 9.1까지 커밋됨 |
+| 다음 할 일 | **11.1 랜딩(S0)** → 11.2 실기기 데모 확인. 10.5 실제 STT는 STT 확정(~10/22) 후 |
 
-미커밋 변경: 없음 (10.4 커밋 직후 기준).
+미커밋 변경: 없음 (9.1 커밋 직후 기준).
 
 > 개발 서버가 떠 있을 때 `npm run build`를 돌리면 개발 서버가 깨진다(Jest worker 오류). 빌드 전에 개발 서버를 끈다. `git status`로 다시 확인할 것.
 
@@ -114,6 +114,7 @@
 | `src/lib/services/stt/{types,mock,index}.ts` | STT 어댑터. `STT_PROVIDER`(기본 mock)로 고름. mock은 예시 문장을 차례로 돌려줌 | 10.1 |
 | `src/app/api/stt/route.ts` | `POST /api/stt` (multipart `audio`) → `{ transcripts, provider }` | 10.2 |
 | `src/components/microphone.ts`, `AskMoyaLink.tsx` | 마이크 열기·닫기·권한 확인, 홈에서 권한 허용된 기기는 권한 안내 건너뛰기 | 10.3~10.4 |
+| `src/lib/services/speech.ts`, `src/components/SoundButton.tsx` | 음성 출력 래퍼(ko-KR, 한국어 음성 없으면 무동작)와 소리 버튼. AskScreen이 대사가 바뀔 때 자동으로 읽음 | 9.1 |
 | `src/components/useSavedWords.ts` | 저장된 카드·물어볼 단어 읽기 훅 (S7·S11, 서버에서는 null) | 12.6 |
 | `src/app/app/cards/page.tsx` | `<CardsScreen />` | 6.1 |
 | `src/app/page.tsx`, `src/app/parent/page.tsx` | h1만 (S0은 11.1, S8은 베타) | — |
@@ -136,12 +137,12 @@
 | ~~7.1~~ | ~~375px 확인(QA-09) + test·lint·build~~ | 완료 | `647bec6`. QA-01~08·10 확인 |
 | ~~8.1~8.3~~ | ~~예시 버튼, 저장·전송 고지, 부적절 단어~~ | 완료 | `d093da3`, `ba09bf2` |
 | ~~12.1~12.7~~ | ~~Figma 와이어프레임 화면 플로우~~ | 완료 | 375px 브라우저 확인 |
-| 9.1 | speechSynthesis 래퍼 (ko-KR, 미지원 시 무동작) | 11/5 전 | 모야 대사·설명·후보·[다시 듣기] |
+| ~~9.1~~ | ~~speechSynthesis 래퍼, 대사 자동 읽기, 소리 버튼~~ | 완료 | `src/lib/services/speech.ts` |
 | ~~10.1~10.4~~ | ~~STT 어댑터(mock), `POST /api/stt`, 녹음, 권한 안내·E1~~ | 완료 | mock은 예시 문장을 차례로 돌려줌 |
 | 10.5 | 실제 STT 연동 | **보류** | STT 확정(~10/22) 전에는 하지 않는다 |
 | 11.1~11.2 | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | 11/5 전 | 05 §5 |
 
-그룹 12와 10.1~10.4까지 끝났다. 다음은 9.1 → 11 순서. 10.5는 STT 확정 후.
+그룹 12, 10.1~10.4, 9.1까지 끝났다. 다음은 11.1 → 11.2. 10.5는 STT 확정 후.
 
 ---
 
@@ -193,4 +194,4 @@
 2. `git status`, `git log --oneline -5`로 커밋 상태를 확인한다.
 3. `npm test`, `npm run lint`, `npm run build`를 실행한다.
 4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업).
-5. 사용자가 진행을 요청하면 작업 9.1부터 시작하고, 2번의 "진행 리듬"을 따른다.
+5. 사용자가 진행을 요청하면 작업 11.1부터 시작하고, 2번의 "진행 리듬"을 따른다.
