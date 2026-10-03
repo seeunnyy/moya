@@ -3,10 +3,11 @@
 // /app/ask 묻기 흐름 화면. 상태(04 §4)에 따라 S1~S6, E1, E2를 바꿔 보여준다 (03 §1, Figma 3~9).
 // 스타일은 최소. 모야 캐릭터·색·폰트는 디자인 작업에서 입힌다. 이미지는 점선 자리 박스.
 
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { BLOCKED_WORDS } from "@/data/blocklist";
 import { MOCK_WORDS } from "@/data/words.mock";
 import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
+import { MAX_RECORDING_MS } from "@/lib/config";
 import { addCard, addPending } from "@/lib/storage";
 import { BackHeader } from "./BackHeader";
 import { Button, LinkButton } from "./Button";
@@ -14,6 +15,7 @@ import { CandidatePicker } from "./CandidatePicker";
 import { ContextPicker } from "./ContextPicker";
 import { ExamplePrompts } from "./ExamplePrompts";
 import { ImageSlot } from "./ImageSlot";
+import { closeMic, openMic } from "./microphone";
 import { PrivacyNotice } from "./PrivacyNotice";
 import { contextOption } from "./heardContext";
 import { QuestionForm } from "./QuestionForm";
@@ -90,26 +92,121 @@ function moyaLine(state: AskState): string {
   }
 }
 
-export function AskScreen() {
-  const [state, dispatch] = useReducer(askReducer, initialAskState);
+type Props = {
+  micDenied?: boolean; // 권한 안내에서 거부하고 왔으면 E1부터 보여준다 (/app/ask?mic=denied)
+};
+
+// 녹음 중인 것들. 화면을 떠나면 정리한다.
+type Recording = { recorder: MediaRecorder; stream: MediaStream; timer: number };
+
+export function AskScreen({ micDenied = false }: Props) {
+  const startState: AskState = micDenied ? { phase: "micDenied", retryCount: 0 } : initialAskState;
+  const [state, dispatch] = useReducer(askReducer, startState);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [mockHeard, setMockHeard] = useState<string | null>(null); // 개발용: mock STT가 돌려준 문장
+
+  // 녹음·인식은 비동기로 끝나므로, 그때의 최신 상태를 알도록 send가 다음 상태를 여기에 같이 적는다.
+  const current = useRef<AskState>(startState);
+  const recording = useRef<Recording | null>(null);
+  const left = useRef(false); // 화면을 떠났으면 늦게 온 인식 결과를 버린다
+
+  function apply(action: AskAction) {
+    current.current = askReducer(current.current, action);
+    dispatch(action);
+  }
 
   // 상태를 바꾸고, 물어볼 단어(S6)에 들어서는 순간 한 번만 자동 저장한다.
   // 단어 카드는 자동 저장하지 않고 [내 단어장에 저장하기]로 저장한다 (D4, saveCard).
   // 저장에 실패해도 흐름은 그대로 진행한다 (word-cards 스펙).
   function send(action: AskAction) {
-    const next = askReducer(state, action);
-    dispatch(action);
+    const prev = current.current;
+    apply(action);
+    const next = current.current;
     setSaveFailed(false);
 
-    if (next.phase === "unknown" && state.phase !== "unknown") {
+    if (next.phase === "unknown" && prev.phase !== "unknown") {
       const saved = addPending({
         id: newId(),
         spokenAs: next.spokenAs,
         heardContext: next.heardContext,
         createdAt: new Date().toISOString(),
       });
-      if (saved) dispatch({ type: "pendingSaved" });
+      if (saved) apply({ type: "pendingSaved" });
+    }
+  }
+
+  // 화면을 떠나면 녹음을 멈추고 마이크를 닫는다 (녹음 내용은 보내지 않는다).
+  useEffect(() => {
+    left.current = false;
+    return () => {
+      left.current = true;
+      const r = recording.current;
+      recording.current = null;
+      if (!r) return;
+      window.clearTimeout(r.timer);
+      if (r.recorder.state !== "inactive") r.recorder.stop();
+      closeMic(r.stream);
+    };
+  }, []);
+
+  // [녹음 시작] (S1 → S2 듣는 중). 마이크를 못 쓰면 E1.
+  async function startRecording() {
+    const stream = await openMic();
+    if (left.current) {
+      if (stream) closeMic(stream);
+      return;
+    }
+    if (!stream) {
+      send({ type: "micDenied" });
+      return;
+    }
+
+    const chunks: Blob[] = [];
+    const recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
+    recorder.onstop = () => {
+      closeMic(stream);
+      if (left.current) return;
+      void transcribe(new Blob(chunks, { type: recorder.mimeType }));
+    };
+    recorder.start();
+    // [그만하기]를 누르지 않아도 최대 녹음 시간이 지나면 끝낸다.
+    const timer = window.setTimeout(stopRecording, MAX_RECORDING_MS);
+    recording.current = { recorder, stream, timer };
+    send({ type: "startListening" });
+  }
+
+  // [그만하기] 또는 최대 녹음 시간 (S2 듣는 중 → 생각 중). 녹음한 것을 인식으로 보낸다.
+  function stopRecording() {
+    const r = recording.current;
+    recording.current = null;
+    if (!r) return;
+    window.clearTimeout(r.timer);
+    send({ type: "recordingDone" });
+    if (r.recorder.state !== "inactive") r.recorder.stop(); // → onstop → transcribe
+  }
+
+  // 오디오를 서버(/api/stt)로 보내 글자로 바꾼다. 오디오는 보낸 뒤 버린다 (NFR-04).
+  // 네트워크 오류·서버 실패는 E2.
+  async function transcribe(audio: Blob) {
+    try {
+      const form = new FormData();
+      form.append("audio", audio, "question");
+      const response = await fetch("/api/stt", { method: "POST", body: form });
+      if (!response.ok) throw new Error(`STT ${response.status}`);
+      const data: { transcripts?: unknown; provider?: string } = await response.json();
+      const transcripts = Array.isArray(data.transcripts)
+        ? data.transcripts.filter((t): t is string => typeof t === "string")
+        : [];
+      if (left.current) return;
+      if (process.env.NODE_ENV === "development" && data.provider === "mock") {
+        setMockHeard(transcripts.join(", ") || "(빈 결과)");
+      }
+      send({ type: "recognized", transcripts });
+    } catch {
+      if (!left.current) send({ type: "sttFailed" });
     }
   }
 
@@ -126,7 +223,7 @@ export function AskScreen() {
       spokenAs: state.spokenAs,
       createdAt: new Date().toISOString(),
     });
-    if (saved) dispatch({ type: "cardSaved" });
+    if (saved) apply({ type: "cardSaved" });
     else setSaveFailed(true);
   }
 
@@ -151,17 +248,21 @@ export function AskScreen() {
         </section>
       )}
 
-      {/* S1 묻기 대기 (Figma 3). 마이크는 작업 10.3에서 연결한다 */}
+      {/* S1 묻기 대기 (Figma 3) */}
       {state.phase === "idle" && (
         <>
           <ImageSlot label="소리 파형 자리" className="h-16" />
-          <Button disabled aria-describedby="mic-soon">
+          <Button onClick={startRecording} className="min-h-16 text-lg">
             녹음 시작
           </Button>
-          <p id="mic-soon" className="-mt-3 text-sm break-keep">
-            마이크는 곧 연결돼요. 지금은 글자나 예시로 물어봐!
-          </p>
         </>
+      )}
+
+      {/* E1 마이크를 쓸 수 없음. 아래 텍스트·예시로 계속한다 */}
+      {state.phase === "micDenied" && (
+        <p className="text-sm break-keep">
+          브라우저 설정에서 마이크를 허용하면 다시 말로 물어볼 수 있어.
+        </p>
       )}
 
       {/* E2 다시 말하기 안내 (Figma 4). 다시 말하기 횟수는 그대로 둔다 (retry) */}
@@ -180,7 +281,13 @@ export function AskScreen() {
 
       {/* S2 듣는 중 / 생각 중 */}
       {state.phase === "listening" && (
-        <Button onClick={() => send({ type: "stopListening" })}>그만하기</Button>
+        <>
+          <ImageSlot label="소리 파형 자리 (듣는 중)" className="h-16" />
+          <Button onClick={stopRecording} className="min-h-16 text-lg">
+            그만하기
+          </Button>
+          <p className="-mt-3 text-sm break-keep">다 말했으면 [그만하기]를 눌러 줘.</p>
+        </>
       )}
 
       {/* S3 단어 확인 질문 (Figma 6) */}
@@ -266,6 +373,11 @@ export function AskScreen() {
             또 물어보기
           </Button>
         </>
+      )}
+
+      {/* 개발 중에만: mock STT가 돌려준 문장 (작업 10.5 실제 STT 전 데모 확인용) */}
+      {mockHeard !== null && (
+        <p className="text-xs break-keep opacity-70">개발용 mock 인식: &ldquo;{mockHeard}&rdquo;</p>
       )}
     </main>
   );

@@ -2,6 +2,7 @@
 // "오늘 복습할 단어가 있어요" 배너는 반복 학습(베타)이라 만들지 않는다.
 
 import Link from "next/link";
+import { AskMoyaLink } from "./AskMoyaLink";
 import { Button, LinkButton } from "./Button";
 import { BottomTabs } from "./BottomTabs";
 import { ImageSlot } from "./ImageSlot";
@@ -22,9 +23,7 @@ export function HomeScreen() {
         <h2 id="home-menu" className="text-xl font-bold">
           뭐 할까?
         </h2>
-        <LinkButton href="/app/mic" className="min-h-24 text-xl">
-          모야한테 물어보기
-        </LinkButton>
+        <AskMoyaLink className="min-h-24 text-xl">모야한테 물어보기</AskMoyaLink>
         <LinkButton href="/app/cards" className="min-h-20 flex-col">
           <span>단어 카드</span>
           <span className="text-sm font-normal">저장한 단어 보기</span>

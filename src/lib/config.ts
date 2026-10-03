@@ -8,3 +8,6 @@ export const MAX_CANDIDATES = 3;
 
 // [아니야] / [다 아니야] 뒤 다시 말하기 횟수
 export const MAX_RETRY = 1;
+
+// 최대 녹음 시간 (ms). [그만하기]를 누르지 않아도 이 시간이 지나면 녹음을 끝낸다 (잠정, 실기기에서 조정)
+export const MAX_RECORDING_MS = 8000;
