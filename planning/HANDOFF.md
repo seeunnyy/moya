@@ -1,7 +1,7 @@
-# 모야 인수인계 (2026-10-04 기준, 작업 9.1 완료 시점)
+# 모야 인수인계 (2026-10-04 기준, 그룹 13 문서 완료 시점)
 
 > 이 문서를 읽는 AI에게: 이 프로젝트를 이어받아 구현을 계속한다.
-> 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md` 순으로 읽고,
+> 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md`(그룹 13) → `design.md` "Figma 와이어프레임 전면 적용 (2차)" 순으로 읽고,
 > 아래 "8. 시작 절차"대로 상태를 확인한 뒤 사용자에게 짧게 보고하고 작업을 시작한다.
 
 ---
@@ -13,43 +13,66 @@
 | 서비스 | 모야 — 만 5~8세 아이가 "○○이 뭐야?"라고 물으면, 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 모바일 웹 (2026 4호선톤 출품 MVP) |
 | 저장소 | `github.com/seeunnyy/moya`, 브랜치 `main` / 로컬: `C:\Users\arong\moya` (Windows) |
 | 스택 | Next.js 16.3.8 (App Router), React 19.2.8, TypeScript, Tailwind CSS 4. 추가 의존성 없음 |
-| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 79개 전부 통과 (9.1 후 test·lint·build 통과 확인) |
+| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 79개 통과 (9.1 시점) |
 | 작업 방식 | OpenSpec spec-driven. 진행 중인 change는 `add-word-question-mvp` 하나 |
-| 진행률 | tasks.md 40개 중 **37개 완료** (그룹 1~9, 12, 10.1~10.4). 남은 것: 10.5(보류), 11.1, 11.2 |
-| 커밋 | 9.1까지 커밋됨 |
-| 다음 할 일 | **11.1 랜딩(S0)** → 11.2 실기기 데모 확인. 10.5 실제 STT는 STT 확정(~10/22) 후 |
+| 진행률 | 그룹 1~9, 12, 10.1~10.4 완료. **그룹 13은 13.1(문서)만 완료**. 남은 것: 13.2~13.10, 11.1~11.2, 10.5(보류) |
+| 다음 할 일 | **그룹 13 코드 작업 (13.2부터). 계획은 사용자 확인 완료** |
 
-미커밋 변경: 없음 (9.1 커밋 직후 기준).
+미커밋 변경: 없음 (그룹 13 문서 커밋 직후 기준). `git status`로 다시 확인할 것.
 
-> 개발 서버가 떠 있을 때 `npm run build`를 돌리면 개발 서버가 깨진다(Jest worker 오류). 빌드 전에 개발 서버를 끈다. `git status`로 다시 확인할 것.
-
-> 화면 구조가 바뀐다: `/app`은 아이 모드 홈, 묻기 흐름은 `/app/ask`, 카드 상세 `/app/cards/[id]`, 마이크 권한 안내 `/app/mic`. 카드는 [내 단어장에 저장하기]로 저장(자동 저장 아님). 결정과 Figma와 다른 부분은 design.md "Figma 와이어프레임 반영", 화면 세부는 Open Questions "그룹 12 구현 중 정한 화면 세부".
+> 코드는 아직 **예전 구조**다(맥락 질문, [이거야!], [또 물어보기], 예문 표시, 최소 스타일). 문서(스펙·design·02~05)는 새 구조다. 문서가 기준이다.
 
 ---
 
-## 2. 반드시 지킬 것
+## 2. 그룹 13에서 확정된 결정 (다시 묻지 말 것)
 
-`CLAUDE.md`가 기준이다. 그중 구현에 직접 걸리는 것만 다시 적는다.
+상세는 `design.md` "Figma 와이어프레임 전면 적용 (2차)", 화면별 구성은 `03_UX_UI_SPEC.md` §1, 값은 §5.
 
-- 답변은 한국어, 결론 먼저. 파일 수정 전에 계획을 먼저 말한다.
-- **새 의존성·새 API는 이유와 대안을 말하고 사용자 확인을 받은 뒤에만** 추가한다.
-- 해커톤 외부 API는 음성인식(STT) 하나뿐. 음성 출력은 브라우저 `speechSynthesis`. 사전 API·LLM은 베타.
-- 아이에게 보여주는 설명은 `src/data`의 단어 데이터만 쓴다. 실행 중 생성 금지.
-- **아이 음성 원본은 저장하지 않는다.** 인식 텍스트만 localStorage에 저장한다.
-- 외부 API는 `src/lib/services` 어댑터를 거쳐 서버(`src/app/api`)에서만 호출. 키는 `.env.local`의 `STT_API_KEY`.
-- `src/lib/pronunciation`은 외부 의존 없는 순수 함수로 유지한다.
+- **기준**: Figma 와이어프레임 Section 1(https://www.figma.com/design/rJZjG6ik2Q2ffj1BiK20U8/?node-id=1271-481)과 화면 구성·버튼·이동·스타일을 똑같이. 이동 기준 ① Figma 연결 ② Manyfast '새 플로우 1' ③ design.md. 화면마다 Figma MCP `get_design_context`로 값을 읽는다(그 전에 `skill://figma/figma-design-to-code/SKILL.md`를 읽어야 함).
+- **되묻기 화면(S12)**: 인식 성공 시 항상 거친다. **결과에 맞는 버튼 하나만** 보인다(후보 2~3 [후보 단어 고르기] / 1 "단어 확인 질문 보기" / 0 "물어볼 단어 안내 보기"). 후보 0개면 "혹시 이 말이야?" 영역 숨김. 미리보기 카드 폭은 1/3로 고정.
+- **맥락 질문 제거**: `context` 단계·상황 버튼·`ContextPicker`·`heardContext.ts`를 없앤다. `orderByContext`와 그 테스트는 남긴다(화면에서 안 씀). `WordCard.heardContext` 타입은 데이터 호환용으로 남긴다.
+- **텍스트·예시 입력은 마이크를 못 쓸 때만**(권한 거부·마이크 없음·미지원·http) 음성 녹음 화면의 [녹음 시작] 아래에 보인다. 평소엔 숨김.
+- **[아니에요]·[여기 없어요]는 한 번 다시 말하기**: 첫 번째 → 음성 녹음, 두 번째 → 물어볼 단어 안내 (기존 retry 규칙).
+- **후보 카드 선택(S4)**: 카드 자체를 누르면 확정. [들어보기]는 소리만. 눈에 보이는 고르기 버튼 없음. 후보 단어는 **20 Bold**(Figma 값).
+- **음성 녹음(S1)**: 듣는 중·생각 중은 같은 화면에서 버튼 글자만 [녹음 시작] → [그만하기] → "생각 중…"(비활성). [녹음 시작]에서 권한 미확인이면 /app/mic. 홈 [모야한테 물어보기]는 바로 /app/ask.
+- **화면 글자는 Figma 문구뿐**. 모야 대사는 sr-only aria-live + 자동 음성.
+- **저장 결과는 버튼 글자로만**: 단어 카드 "저장했어!"/"다시 저장하기", 물어볼 단어 "적어 뒀어!"/"다시 저장하기". [또 물어보기]·예문·들은 상황은 화면에서 뺀다.
+- **영어 표기**: `WordEntry.english?` 추가, mock 10개 채움, 없으면 숨김. 카드 상세는 `wordEntryId`로 데이터에서 찾는다(저장 형식은 그대로).
+- **목록**: "학습 상태" Select + 칩 [전체][새 단어][복습 중][완료] 같은 값 공유. 모든 카드 "새 단어".
+- **저장·전송 안내는 /parent로만**. /parent는 Figma 헤더("<" → 홈) + 안내.
+- **계획 확인 1~4 (기본값 확정)**: ① 후보 단어 20 Bold ② Figma에 없는 화면 헤더 이름: 부적절 단어 "부적절 단어 안내 화면", /parent "보호자 화면", 카드 상세 "단어 카드 화면" ③ 줄 간격 토큰 고정(아래 표) ④ 비교는 새 패키지 없이 headless Chrome 스크린샷 + 나란히 붙인 HTML 스크린샷, 위치는 DOM 좌표 vs Figma 메타데이터.
+- **줄 간격 토큰** (Noto Sans KR 기본 줄 간격이 Inter보다 커서 Figma 높이로 고정. PM이 Figma 글꼴을 바꿀 때 Figma에도 같은 px를 넣는다):
+
+| 토큰 | 크기 | 줄 간격 |
+|---|---|---|
+| `text-word` | 28px | 34px |
+| `text-title` | 20px | 24px |
+| `text-body` | 16px | 19px |
+| `text-button` | 14px | 17px |
+| `text-caption` | 12px | 15px |
+| `text-label` | 11px | 13px |
+
+- **스타일 기타**: Noto Sans KR(next/font/google, Geist 제거), 다크 모드 제거, 앱 틀 최대 390px 가운데, 버튼 보이는 크기 Figma 그대로 + `::before`로 누르는 영역 48px, "<"는 글자 없이 aria-label("이전 화면"/"홈으로").
+- **askFlow 변경안**: `review` 추가, `openConfirm`·`openChoose`·`openUnknown`·`showRetryGuide`·`back`(각 상태의 `from`) 추가, `context`·`pickContext`·`micDenied`·`stopListening` 제거. 04 §4 다이어그램 참고.
+
+### 반드시 지킬 것 (CLAUDE.md 요약)
+
+- 답변은 한국어, 결론 먼저. 파일 수정 전에 계획을 먼저 말한다(그룹 13은 계획 확인 완료).
+- **새 의존성·새 API는 이유와 대안을 말하고 사용자 확인을 받은 뒤에만.** 픽셀 비교 도구도 설치 전에 묻는다.
+- 해커톤 외부 API는 음성인식(STT) 하나뿐. 음성 출력은 브라우저 `speechSynthesis`.
+- 아이에게 보여주는 설명은 `src/data`의 단어 데이터만. 아이 음성 원본은 저장하지 않는다.
+- `src/lib/pronunciation`·`storage`·`services`는 그룹 13에서 건드리지 않는다.
 - Next 16은 학습 데이터와 다를 수 있다. 코드 작성 전 `node_modules/next/dist/docs/`의 관련 문서를 확인한다 (`AGENTS.md`).
-- **스타일은 최소로.** 모야 캐릭터·색·폰트는 Figma 시안 확정 후 입힌다 (design.md Non-Goals). 지금은 점선 박스 + 상태 글자.
 
 ### 사용자와 정한 진행 리듬
 
-1. `/opsx:apply add-word-question-mvp` 로 진행하되, 사용자가 "작업 N 그룹 끝까지만"처럼 범위를 정해 준다.
+1. `/opsx:apply add-word-question-mvp` 로 진행하되, 사용자가 범위를 정해 준다.
 2. 그룹이 끝나고 `npm test`·`npm run lint`·`npm run build`가 통과하면 **묻지 말고 커밋**한 뒤, 다음 그룹 시작 전에 멈추고 리포트한다.
-3. 리포트에는 반드시 두 가지를 넣는다: **"tasks.md와 다르게 한 부분"**, **"문서에 없어서 내가 정한 부분"**.
+3. 리포트에는 반드시: **"tasks.md(또는 Figma)와 다르게 한 부분"**, **"문서에 없어서 내가 정한 부분"**, 바뀐 파일. 그룹 13은 화면별 결과표(일치 / 폰트 차이 / 그 밖의 차이)와 줄 간격 토큰 표도.
 4. 구현 중 정한 잠정 해석은 `design.md` Open Questions에 기록한다.
-5. 문서(design.md 등) 커밋과 코드 커밋은 분리한다.
-6. 커밋 메시지 형식: `feat: … (작업 x.y~x.z)`, `docs(openspec): …`
-7. 빌드할 때는 사용자에게 묻지 않고 AI가 localhost:3000 개발 서버를 끄고 `npm run build`를 돌린 뒤, 빌드가 끝나면 개발 서버(`npm run dev`, localhost:3000)를 다시 켜 둔다. (서버가 떠 있는 채로 빌드하면 개발 서버가 깨진다)
+5. 문서 커밋과 코드 커밋은 분리한다. 메시지 형식: `feat: … (작업 x.y~x.z)`, `docs(openspec): …`
+6. 빌드할 때는 묻지 않고 localhost:3000 개발 서버를 끄고 `npm run build` 후 개발 서버를 다시 켜 둔다(서버가 떠 있는 채로 빌드하면 개발 서버가 깨진다). **단, 사용자가 "개발 서버는 켜지 마"라고 하면 다시 켜지 않는다.** 메모리 부족으로 개발 서버가 종료된 적이 있다(2026-10-04).
+7. 브라우저 확인에 띄운 headless Chrome·임시 서버(`next start -p 3123` 등)는 끝나면 바로 정리한다.
 
 ---
 
@@ -58,117 +81,71 @@
 | 파일 | 내용 | 언제 보나 |
 |---|---|---|
 | `CLAUDE.md` | 프로젝트 규칙, 경계(Boundaries) | 항상 |
-| `openspec/changes/add-word-question-mvp/tasks.md` | 구현 체크리스트 32개 | 작업 시작 전 |
-| `openspec/changes/add-word-question-mvp/design.md` | 구현 결정과 이유, **Open Questions(잠정값)** | 결정이 애매할 때 |
+| `openspec/changes/add-word-question-mvp/tasks.md` | 구현 체크리스트. **그룹 13** | 작업 시작 전 |
+| `openspec/changes/add-word-question-mvp/design.md` | 결정과 이유. **"Figma 와이어프레임 전면 적용 (2차)"**, Open Questions | 결정이 애매할 때 |
 | `openspec/changes/add-word-question-mvp/specs/*/spec.md` | 7개 capability의 요구사항·시나리오 | 동작을 확인할 때 |
-| `openspec/changes/add-word-question-mvp/proposal.md` | 범위와 범위 밖 | 범위 판단 |
+| `planning/md-design/03_UX_UI_SPEC.md` | **화면별 구성·이동(§1), 컴포넌트(§2), Visual 값·토큰(§5)** | 화면 만들 때 |
+| `planning/md-design/04_TECHNICAL_DESIGN.md` | 라우트, 데이터 모델(§3), **상태 기계(§4)**, 저장(§5) | 구조 확인 |
+| `planning/md-design/05_DELIVERY_PLAN.md` | 일정(§1), **수동 QA(§4, QA-01~14)**, 데모 시나리오(§5) | QA·일정 |
 | `planning/md-design/02_REQUIREMENTS_SPEC.md` | FR/NFR ID, 인수조건, 추적표 | 요구사항 ID 확인 |
-| `planning/md-design/03_UX_UI_SPEC.md` | 화면 S0~S8, E1·E2, 컴포넌트, 고지 문구(§3) | 화면 만들 때 |
-| `planning/md-design/04_TECHNICAL_DESIGN.md` | 라우트, 데이터 모델(§3), 상태(§4), 저장(§5) | 구조 확인 |
-| `planning/md-design/05_DELIVERY_PLAN.md` | 일정(§1), 오늘 범위(§2), mock 단어(§3), **수동 QA(§4)**, 데모 시나리오(§5) | QA·일정 |
-| `planning/reviews/md-design-review.md` | 기획 리뷰. [필수] 5개는 반영됨, [권장] 1~7은 미반영 | 참고 |
 | `docs/PRD.md`, `docs/DESIGN.md`, `docs/ARCHITECTURE.md` | 요약판 | 참고 |
 
 ---
 
-## 4. 구현된 것 (코드 지도)
+## 4. 지금 코드 (그룹 13 전, 예전 구조)
 
-### 데이터 흐름
-
-```
-텍스트 입력(QuestionForm)
-  → askReducer "recognized"
-    → extractTargets()  "두박이 뭐야?" → ["두박"]       (못 꺼내면 E2)
-    → inferWord()       역규칙 변형 + 자모 거리 → confirm / choose / unknown
-  → confirm(S3) ─[응]──────────────────────────→ explaining(S5) → 카드 저장 → saved
-  → context(S4) ─상황 버튼→ choose ─[이거야!]──→ explaining(S5)
-  → unknown(S6) → 물어볼 단어 저장
-  [아니야]/[다 아니야]: 첫 번째는 S1로 돌아가 다시 묻기, 두 번째는 S6
-```
-
-### 파일
-
-| 파일 | 역할 | 작업 |
+| 파일 | 역할 | 그룹 13에서 |
 |---|---|---|
-| `src/types/index.ts` | WordEntry, WordCard, PendingWord, Candidate, CandidateResult, PronunciationRule, HeardContext | 1.1 |
-| `src/lib/config.ts` | MAX_DISTANCE=2, MAX_CANDIDATES=3, MAX_RETRY=1 (다른 모듈은 이 값만 참조) | 1.2 |
-| `src/lib/pronunciation/jamo.ts` | 자모 분해·조합 | 2.1 |
-| `src/lib/pronunciation/distance.ts` | 자모 편집거리 | 2.2 |
-| `src/data/rules.ts`, `src/lib/pronunciation/rules.ts` | R1·R3 역규칙 표, 변형 생성 | 2.3 |
-| `src/lib/pronunciation/extract.ts` | "○○이 뭐야" 대상 단어 추출 | 2.4 |
-| `src/lib/pronunciation/candidates.ts` | 후보 찾기·분기, 상황 동점 정렬(`orderByContext`) | 2.5 |
-| `src/data/words.mock.ts` | mock 단어 10개 (**검수 전**, 순서가 동점 정렬에 영향) | 3.1 |
-| `src/data/examplePrompts.ts` | 데모 문장 3개 — **아직 화면에 연결 안 됨** (8.1에서 연결) | 3.2 |
-| `src/data/blocklist.ts` | 부적절 단어 mock 1개 — **아직 흐름에 연결 안 됨** (8.3에서 연결) | 3.2 |
-| `src/lib/storage/index.ts` | `moya.cards.v1`, `moya.pending.v1` 읽기·추가. 실패 시 빈 목록/false. 정해진 필드만 저장 | 4.1~4.2 |
-| `src/lib/askFlow.ts` | `/app` 상태 기계 reducer (순수 함수, 단어 데이터 주입) | 5.1 |
-| `src/components/AskScreen.tsx` | `/app/ask` 화면. 상태별 S1~S6·E1·E2·blocked 표시. S6 진입 시 물어볼 단어 자동 저장, 카드는 [내 단어장에 저장하기]로 저장 | 5.2~5.7, 12.4~12.5 |
-| `src/components/{Button,QuestionForm,ContextPicker,CandidatePicker,heardContext}` | 최소 스타일 UI. 버튼 48px 이상, 글자 필수 | 5.x |
-| `src/app/app/page.tsx`, `src/components/HomeScreen.tsx` | `/app` 아이 모드 홈(S9) | 12.1 |
-| `src/app/app/mic/page.tsx`, `src/components/MicPermissionScreen.tsx` | `/app/mic` 권한 안내(S10). 지금은 두 버튼 모두 /app/ask | 12.2 |
-| `src/app/app/ask/page.tsx` | `<AskScreen />` | 12.1 |
-| `src/components/{BackHeader,BottomTabs,ScreenHeading,ImageSlot,SoundButton}` | "<" 헤더, 하단 탭, 제목 포커스, 점선 이미지 자리, 비활성 소리 버튼 자리(9.1에서 연결) | 12.x |
-| `src/components/WordCardView.tsx` | 단어 카드 본문 (S5·S11 공용) | 12.5 |
-| `src/components/CardsScreen.tsx` | `/app/cards` 화면(S7). 2열 카드 그리드·물어볼 단어 목록·빈 상태 | 6.1, 12.6 |
-| `src/app/app/cards/[id]/page.tsx`, `src/components/CardDetailScreen.tsx` | 카드 상세(S11). 처음 물은 말 표시, 없는 id면 안내 | 12.6 |
-| `src/lib/services/stt/{types,mock,index}.ts` | STT 어댑터. `STT_PROVIDER`(기본 mock)로 고름. mock은 예시 문장을 차례로 돌려줌 | 10.1 |
-| `src/app/api/stt/route.ts` | `POST /api/stt` (multipart `audio`) → `{ transcripts, provider }` | 10.2 |
-| `src/components/microphone.ts`, `AskMoyaLink.tsx` | 마이크 열기·닫기·권한 확인, 홈에서 권한 허용된 기기는 권한 안내 건너뛰기 | 10.3~10.4 |
-| `src/lib/services/speech.ts`, `src/components/SoundButton.tsx` | 음성 출력 래퍼(ko-KR, 한국어 음성 없으면 무동작)와 소리 버튼. AskScreen이 대사가 바뀔 때 자동으로 읽음 | 9.1 |
-| `src/components/useSavedWords.ts` | 저장된 카드·물어볼 단어 읽기 훅 (S7·S11, 서버에서는 null) | 12.6 |
-| `src/app/app/cards/page.tsx` | `<CardsScreen />` | 6.1 |
-| `src/app/page.tsx`, `src/app/parent/page.tsx` | h1만 (S0은 11.1, S8은 베타) | — |
-| `tests/**` | jamo, distance, rules, extract, candidates, words.mock, examplePrompts, storage, askFlow, config | — |
+| `src/types/index.ts` | WordEntry, WordCard, PendingWord, Candidate 등 | `WordEntry.english?` 추가 (13.3) |
+| `src/lib/config.ts` | MAX_DISTANCE=2, MAX_CANDIDATES=3, MAX_RETRY=1, MAX_RECORDING_MS=8000 | 그대로 |
+| `src/lib/pronunciation/*` | 자모·거리·역규칙·추출·후보(`inferWord`, `orderByContext`) | 그대로 |
+| `src/data/words.mock.ts` | mock 단어 10개 (검수 전) | english 채움 (13.3) |
+| `src/data/{examplePrompts,blocklist,rules}.ts` | 예시 문장 3개, 부적절 단어 mock "나쁜말", 역규칙 | 그대로 |
+| `src/lib/storage/index.ts` | `moya.cards.v1`, `moya.pending.v1` | 그대로 |
+| `src/lib/services/stt/*`, `src/app/api/stt/route.ts` | STT 어댑터(mock: 두박 → 가바 → 뿌잉뿌잉 순), `POST /api/stt` | 그대로 |
+| `src/lib/services/speech.ts` | speechSynthesis 래퍼 | 그대로 |
+| `src/lib/askFlow.ts` + `tests/askFlow.test.ts` | 묻기 흐름 reducer | **바꿈 (13.2)** |
+| `src/app/globals.css`, `src/app/layout.tsx` | 최소 스타일, Geist 폰트, 다크 모드 | 토큰·Noto Sans KR (13.4) |
+| `src/components/{Button,ImageSlot,BackHeader,BottomTabs,ScreenHeading,SoundButton}` | 공통 UI | Figma 컴포넌트로 (13.4) |
+| `src/components/AskScreen.tsx` | `/app/ask` 전 화면. 녹음·STT·저장·소리 연결 로직 포함 | 화면 전면 수정, 녹음·소리 로직은 유지 (13.6~13.8) |
+| `src/components/{HomeScreen,MicPermissionScreen,CandidatePicker,WordCardView,CardsScreen,CardDetailScreen,QuestionForm,ExamplePrompts,PrivacyNotice,useSavedWords,microphone}` | 화면·도우미 | 13.5~13.9 |
+| `src/components/{ContextPicker,heardContext,AskMoyaLink}` | 맥락 질문, 권한 확인 링크 | **삭제 (13.9)** |
+| `src/app/parent/page.tsx` | "< 홈" + h1만 | 저장·전송 안내 (13.5) |
 
-### 코드 규칙 (기존 패턴 유지)
-
-- `src/lib`, `src/data`, `src/types`끼리는 **`.ts` 확장자가 붙은 상대 경로**로 import한다 (Node 테스트 러너 때문, tsconfig `allowImportingTsExtensions`). 컴포넌트에서는 `@/` 별칭을 쓴다.
-- 저장은 reducer 밖에서 한다. `AskScreen`의 `send()`가 다음 상태를 미리 계산해 S5·S6 진입 시점에 저장하고, 결과를 `cardSaved`/`pendingSaved` 액션으로 알린다.
-- ID는 `crypto.randomUUID` 대신 직접 만든다 (휴대폰에서 http 개발 서버 접속 시 없을 수 있음).
-- 화면 전환 시 h1로 포커스 이동, 모야 대사는 `aria-live="polite"`.
+코드 규칙:
+- `src/lib`, `src/data`, `src/types`끼리는 **`.ts` 확장자가 붙은 상대 경로**로 import (Node 테스트 러너). 컴포넌트에서는 `@/` 별칭.
+- 저장은 reducer 밖(`AskScreen`의 `saveCard`·`savePending`)에서 하고 결과를 `cardSaved`/`pendingSaved` 액션으로 알린다. 비동기 콜백은 `current` ref로 최신 상태를 읽는다.
+- ID는 `crypto.randomUUID` 대신 직접 만든다 (http 접속 대비).
+- 화면 전환 시 h1로 포커스 이동(`ScreenHeading`의 `focusKey`).
 
 ---
 
 ## 5. 남은 작업
 
-| 작업 | 내용 | 시점 | 메모 |
-|---|---|---|---|
-| ~~6.1~~ | ~~`/app/cards` 단어장~~ | 완료 | `2c8db68` |
-| ~~7.1~~ | ~~375px 확인(QA-09) + test·lint·build~~ | 완료 | `647bec6`. QA-01~08·10 확인 |
-| ~~8.1~8.3~~ | ~~예시 버튼, 저장·전송 고지, 부적절 단어~~ | 완료 | `d093da3`, `ba09bf2` |
-| ~~12.1~12.7~~ | ~~Figma 와이어프레임 화면 플로우~~ | 완료 | 375px 브라우저 확인 |
-| ~~9.1~~ | ~~speechSynthesis 래퍼, 대사 자동 읽기, 소리 버튼~~ | 완료 | `src/lib/services/speech.ts` |
-| ~~10.1~10.4~~ | ~~STT 어댑터(mock), `POST /api/stt`, 녹음, 권한 안내·E1~~ | 완료 | mock은 예시 문장을 차례로 돌려줌 |
-| 10.5 | 실제 STT 연동 | **보류** | STT 확정(~10/22) 전에는 하지 않는다 |
-| 11.1~11.2 | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | 11/5 전 | 05 §5 |
+| 작업 | 내용 | 메모 |
+|---|---|---|
+| **13.2~13.10** | Figma 와이어프레임 전면 적용 (askFlow → 데이터 → 공통 → 화면 → 검증) | **다음 작업** |
+| 11.1~11.2 | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | 그룹 13 후. 05 §5 |
+| 10.5 | 실제 STT 연동 | **보류**. STT 확정(~10/22) 후 |
 
-그룹 12, 10.1~10.4, 9.1까지 끝났다. 다음은 11.1 → 11.2. 10.5는 STT 확정 후.
+검증(13.10) 메모: Figma 메타데이터(node 좌표)는 `get_metadata`(node 1271:481)로 얻는다. 비교 이미지는 scratchpad 같은 커밋하지 않는 폴더에 둔다. 비교할 때 홈은 카드 3개를 넣은 상태로 본다(0개면 배너가 숨겨져 위치가 달라짐). Chrome 확장이 연결되지 않으면 headless Chrome + Node 내장 WebSocket(CDP)으로 확인할 수 있다(이전 세션에서 사용).
 
 ---
 
-## 6. 확인이 필요한 것
+## 6. 이후 작업에 걸리는 Open Questions (design.md에 기본값 있음)
 
-1. **수동 QA는 7.1에서 확인됨.** 커밋 메시지 기준: 375px에서 S1·S3~S7·E2 가로 넘침 없음(QA-09), QA-01~08·10 확인. QA-11·12는 8.1·8.2에서 확인한다.
-2. **빌드는 7.1에서 통과.** 페이지가 `src/lib`를 `.ts` 확장자로 import해도 Next 빌드가 통과했다. 이후 import가 늘어나 충돌하면 design.md Risks대로 확장자 없는 import로 되돌리고 사용자에게 보고한다.
-3. **문서가 실제와 어긋난 곳** (고치기 전에 사용자 확인):
-   - 05 §2는 "단위 테스트 도구 설치 안 함, 수동 QA만"이라고 돼 있지만 실제로는 Node 내장 러너로 테스트를 만들었다(새 패키지 없음, design.md에 결정 기록).
-   - tasks.md 1.3의 test 스크립트(`node --test tests/`)와 실제(`node --test "tests/**/*.test.ts"`)가 다르다. Node 26에서 폴더 지정이 실패해서 바꿨다.
-4. **readiness-check 스킬은 없다.** 설계 질문만 오갔고 `.claude/skills/`에 파일이 생기지 않았다. 있는 스킬: `planning-review`, `md-to-openspec`, `openspec-*`.
-
-### 이후 작업에 걸리는 Open Questions (design.md에 기본값 있음)
-
-| 질문 | 기본값 | 걸리는 작업 |
-|---|---|---|
-| 고지 문구 최종안 | 03 §3 잠정 문구 | 8.2 |
-| 부적절 단어 목록·판별 기준 | 빈 목록 + mock 1개 | 8.3 |
-| 모야 말투, 확인 질문 틀 2~3종 | 틀 1종 "○○ 말하는 거야? <힌트>!" | 9.1, 전반 |
-| 녹음 자동 종료 기준 | [그만하기] + 최대 녹음 시간 | 10.3 |
-| STT 서비스 | mock 어댑터 | 10.x |
-| 지시어만 있는 질문("이게 뭐야", "저거 뭐야") | 지금은 "이게"를 단어로 꺼내 물어볼 단어로 저장됨 | 녹음 테스트 후 |
-| 같은 거리 후보 순서 | 데이터 순서 ("가바" → 가방 먼저) | 데이터 교체 시 |
-| '이'로 끝나는 단어(고양이) 추출 | 예외 처리 없음 | 데이터 교체 시 |
-| 단어장 정렬·중복 카드 | 최근 저장 순, 같은 단어 다시 물으면 카드 한 장 더 (중복 제거 없음) | 반복 학습(베타) |
-| 배포 환경 | 미정 | 11/5 전 결정 |
+| 질문 | 기본값 |
+|---|---|
+| 모야 말투, 반말·존댓말 통일, 확인 질문 틀 2~3종 | Figma 문구 그대로, 틀 1종 "○○ 말하는 거야? <힌트>!" |
+| [그만하기] 버튼 이름 | 유지, 말투 정할 때 다시 |
+| 부적절 단어 목록·판별 기준 | mock 1개, 정확히 같을 때만 |
+| STT 서비스 | mock 어댑터 |
+| 최대 녹음 시간 | 8초 (실기기에서 조정) |
+| 지시어만 있는 질문("이게 뭐야") | "이게"를 단어로 꺼냄 → 물어볼 단어 |
+| 같은 거리 후보 순서 | 데이터 순서 ("가바" → 가방 먼저) |
+| 단어장 정렬·중복 카드 | 최근 저장 순, 중복 제거 없음 |
+| 고지 문구 최종안 | 03 §3 잠정 문구 |
+| 배포 환경 | 미정 (11/5 전 결정) |
 
 ---
 
@@ -179,19 +156,19 @@
 | ~10/15 | STT 후보 3종 선정, 녹음 테스트 단어 10개를 `WordEntry`로 작성 (PM) | `words.mock.ts` 교체 준비 |
 | 10/16~10/22 | 아이 녹음 테스트, 역규칙 보정 | `src/data/rules.ts`, `config.ts` 값 조정 |
 | ~10/22 | STT 확정 | 10.5 시작 가능 |
-| 10/19 | 기획 확정, BE 작업 시작 (팀원 모집 중) | — |
 | 10/29 | 검수된 단어 데이터 50~100개, 핵심 화면 UI 전달 | 데이터 교체, 디자인 입히기 |
-| 11/5 | **1차 배포** (보호자 동의서 확정 포함) | 8~11 그룹 완료 필요 |
+| 11/5 | **1차 배포** | 13·11 그룹 완료 필요 |
 | 11/6~11/12 | 사용성 테스트 | — |
-| 11/12 | 기능 동결 | — |
 | 11/20 | 최종 배포, 발표 | — |
+
+PM 할 일: Figma 글꼴 교체 시 §2의 줄 간격 토큰 px를 Figma에도 넣는다.
 
 ---
 
 ## 8. 시작 절차 (새 세션의 AI가 할 일)
 
-1. 이 문서, `CLAUDE.md`, `tasks.md`를 읽는다.
+1. 이 문서, `CLAUDE.md`, `tasks.md` 그룹 13, `design.md` "Figma 와이어프레임 전면 적용 (2차)"를 읽는다.
 2. `git status`, `git log --oneline -5`로 커밋 상태를 확인한다.
-3. `npm test`, `npm run lint`, `npm run build`를 실행한다.
-4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업).
-5. 사용자가 진행을 요청하면 작업 11.1부터 시작하고, 2번의 "진행 리듬"을 따른다.
+3. `npm test`, `npm run lint`를 실행한다. (`npm run build`는 개발 서버 규칙(§2-6)을 지킨다)
+4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업 = 13.2).
+5. 사용자가 진행을 요청하면 `/opsx:apply add-word-question-mvp`로 13.2부터 시작한다. 계획은 이미 확인받았으니 다시 묻지 않는다.

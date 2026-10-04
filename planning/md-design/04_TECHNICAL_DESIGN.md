@@ -16,7 +16,7 @@
 | / | S0 | |
 | /app | S9 아이 모드 홈 | 하단 탭 |
 | /app/mic | S10 마이크 권한 안내 | |
-| /app/ask | S1~S6, E1, E2 | 한 페이지 안에서 상태로 전환 (§4) |
+| /app/ask | S1, E1, E2, E3, S12, S3~S6 | 한 페이지 안에서 상태로 전환 (§4). `?mic=denied`면 폴백(E1)부터 |
 | /app/cards | S7 | 하단 탭 |
 | /app/cards/[id] | S11 단어 카드 상세 | id = WordCard.id. 없으면 안내 + 목록으로 |
 | /parent | S8 | 베타, 자리만 |
@@ -88,7 +88,8 @@ type WordEntry = {
   hint: string;             // 확인 질문·후보 카드에 붙는 짧은 힌트
   contextTags: HeardContext[]; // 아이가 이 단어를 주로 듣는 상황
   kidExplanation: string;   // 아이 눈높이 설명 (한두 문장)
-  example: string;          // 일상 예문 1개
+  example: string;          // 일상 예문 1개 (데이터에만 두고 화면에는 보여주지 않음)
+  english?: string;         // 영어 표기 (단어 카드에 12px, 없으면 숨김)
   dictDefinition: string;   // 사전 뜻풀이 (검수 기준)
   source: string;           // 사전 출처
   reviewed: boolean;        // 검수 완료 여부
@@ -102,7 +103,7 @@ type WordCard = {
   dictDefinition: string;
   kidExplanation: string;
   example: string;
-  heardContext?: HeardContext; // 들은 상황 (맥락 질문에서 고른 버튼, [모르겠어]면 없음)
+  heardContext?: HeardContext; // 들은 상황. 맥락 질문이 빠져 새 카드에는 없음 (예전 데이터 호환용으로 타입만 남김)
   spokenAs: string;         // 아이가 처음 말한 발음 (인식 텍스트)
   createdAt: string;        // ISO 8601
   nextReviewAt?: string;    // 베타
@@ -138,31 +139,34 @@ type PronunciationRule = {
 ```
 
 ## 4. State
-`/app/ask`는 `useReducer` 상태 기계 하나로 관리한다. 상태 관리 라이브러리는 추가하지 않는다.
+`/app/ask`는 `useReducer` 상태 기계 하나로 관리한다. 상태 관리 라이브러리는 추가하지 않는다. (와이어프레임 전면 적용, design.md "Figma 와이어프레임 전면 적용 (2차)")
 
 ```
-idle → listening → thinking ─┬→ confirm ──────────┬→ explaining → saved → idle
-                             ├→ context → choose ─┘
-                             └→ unknown → idle
-오류: micDenied, sttFailed (→ retry로 idle, retryCount 유지)
+idle(S1) → listening → thinking ─┬→ review(S12) ─┬ [후보 단어 고르기] → choose(S4) ─카드→ explaining(S5) → saved
+   │                             │               ├ "단어 확인 질문 보기" → confirm(S3) ─[네, 맞아요]→ explaining
+   │                             │               └ "물어볼 단어 안내 보기" → unknown(S6)
+   │                             ├→ sttFailed(E2)  (인식 실패·추출 실패)
+   │                             └→ blocked(E3)    (부적절 단어)
+   └ 링크 "다시 말하기" → sttFailed ─[다시 녹음하기](retry)→ idle (retryCount 유지)
+back: 각 상태가 직전 상태(from)를 들고 있어 "<"로 돌아간다
 ```
 
-- explaining → saved는 S5의 [내 단어장에 저장하기]로 저장에 성공했을 때만 일어난다.
+- listening·thinking은 새 화면이 아니라 S1 안에서 버튼 글자만 바뀐다([녹음 시작] → [그만하기] → "생각 중…").
+- 마이크를 쓸 수 없는 것은 상태가 아니라 화면 쪽 표시다. 그때 S1에 텍스트 입력·예시 버튼이 보인다(E1).
+- explaining → saved는 S5의 [내 단어장에 저장하기]로 저장에 성공했을 때만 일어난다. 물어볼 단어 저장은 unknown의 `pendingSaved`.
 - confirm이나 choose에서 [아니에요] / [여기 없어요]를 고르면 `retryCount`가 0일 때 idle로 돌아가 다시 말하게 한다. `retryCount`가 1이면 unknown으로 간다.
+- 없앤 것: `context`·`pickContext`(맥락 질문), `micDenied`, `stopListening`.
 
-| 상태 | 화면 (03) | MoyaCharacter |
+| 상태 | 화면 (03) | "<" |
 |---|---|---|
-| idle | S1 | idle |
-| listening | S2 | listening |
-| thinking | S2 | thinking |
-| confirm | S3 | speaking |
-| context | S4 (맥락 질문) | speaking |
-| choose | S4 (후보 고르기) | confused |
-| unknown | S6 | confused |
-| explaining | S5 | speaking |
-| saved | S5 (저장 완료 표시) | happy |
-| micDenied | E1 | confused |
-| sttFailed | E2 | confused |
+| idle / listening / thinking | S1 (E1 폴백 포함) | 홈 |
+| sttFailed | E2 | 이전 화면 |
+| blocked | E3 | 이전 화면 |
+| review | S12 | 이전 화면 |
+| confirm | S3 | 이전 화면 |
+| choose | S4 | 이전 화면 |
+| explaining / saved | S5 | 이전 화면 |
+| unknown | S6 | 홈 |
 
 ## 5. Storage
 - MVP는 `localStorage`를 쓴다. 키에 버전을 넣는다: `moya.cards.v1`, `moya.pending.v1`

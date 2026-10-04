@@ -9,7 +9,7 @@
 ## Product Idea
 This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 모르는 단어를 찾을 수 없고, 기존 음성 AI는 아이 발음을 잘 못 알아듣는 문제" by 외계인 친구 '모야'에게 음성으로 묻고, 발음이 서툴면 되묻기로 단어를 찾아 아이 눈높이 설명을 듣는 것.
 - 세계관: 모야는 '지구 번역기'로 아이와 함께 지구 말을 배워가는 외계인 친구.
-- 핵심 차별점: 아이 발음이 부정확해도 되묻기와 상황 맥락으로 의도한 단어를 찾아 후보로 제시한다.
+- 핵심 차별점: 아이 발음이 부정확해도 되묻기로 의도한 단어를 찾아 후보로 제시한다.
 
 ## Tech Stack
 - Next.js (App Router)
@@ -20,7 +20,7 @@ This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 �
 - GitHub
 
 ## Current Stage
-Session 4: OpenSpec `add-word-question-mvp` 구현 중 — 37/40 완료(그룹 1~9, 12, 10.1~10.4: 화면 플로우·mock STT 녹음·음성 출력). 다음: 11.1 랜딩 → 11.2 실기기 데모, 10.5 실제 STT는 확정 후 (상세는 planning/HANDOFF.md)
+Session 5: OpenSpec `add-word-question-mvp` — 그룹 13(Figma 와이어프레임 전면 적용) 문서 완료, 코드 작업 시작 전(계획 확인 완료). 그다음 11.1 랜딩 → 11.2 실기기 데모, 10.5 실제 STT는 확정 후 (상세는 planning/HANDOFF.md)
 
 ## Working Rules
 - Read relevant files before suggesting changes.
@@ -43,13 +43,14 @@ Session 4: OpenSpec `add-word-question-mvp` 구현 중 — 37/40 완료(그룹 1
 
 ## Moya Response Rules
 - 말투: TBD (예: 호기심 많고 다정한 반말, 짧은 문장)
-- 설명 형식: 아이 눈높이의 한두 문장 정의 + 일상 예문 1개
+- 설명 형식: 아이 눈높이의 한두 문장 정의. 예문은 단어 데이터에만 두고 화면에는 보여주지 않는다(와이어프레임 기준).
 - 아이에게 부적절한 단어(욕설·성적·폭력적 표현 등)는 설명하지 않고 "엄마·아빠한테 물어보자"로 안내한다.
-- 음성 녹음·개인정보는 최소로 수집하고, 무엇을 저장하는지 화면에서 명확히 보여준다.
+- 음성 녹음·개인정보는 최소로 수집하고, 무엇을 저장·전송하는지는 보호자 화면(/parent)에 둔다.
 
 ## Hackathon Focus
 - 심사에서 보여줄 핵심 장면(아이가 엉성하게 물어도 모야가 맞춰주는 순간)이 잘 드러나는 쪽을 우선한다.
-- 발표·피칭 자료는 '맥락 기반 단어 유추' 차별점을 중심으로 한다.
+- 발표·피칭 자료는 '서툰 발음 되묻기'(엉성하게 물어도 후보를 찾아 되묻는 장면)를 중심으로 한다.
+- 맥락 질문(상황 버튼)은 와이어프레임에서 빠졌고, 로직(`orderByContext`)만 남겨 두었다.
 
 ## Boundaries
 Do not add:
@@ -58,7 +59,7 @@ Do not add:
 - real-time collaboration
 - large file upload
 - 아이 음성 원본 저장 (인식된 텍스트만 저장)
-- 해커톤에서 음성인식 외의 외부 API. 음성 출력은 브라우저 내장 speechSynthesis를 쓴다. 사전 API·LLM 실시간 설명·LLM 재순위는 베타 (MVP의 맥락 단서는 상황 버튼 + 단어 데이터의 상황 태그로 처리). 연동은 mock으로 흐름을 먼저 확인한 뒤 실제 API로 교체한다.
+- 해커톤에서 음성인식 외의 외부 API. 음성 출력은 브라우저 내장 speechSynthesis를 쓴다. 사전 API·LLM 실시간 설명·LLM 재순위는 베타 (MVP 후보 순서는 발음 거리 순, 같으면 데이터 순). 연동은 mock으로 흐름을 먼저 확인한 뒤 실제 API로 교체한다.
 
 ## References
 - Follow docs/PRD.md for scope.
