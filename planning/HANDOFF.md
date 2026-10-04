@@ -1,7 +1,7 @@
-# 모야 인수인계 (2026-10-04 기준, 그룹 13 문서 완료 시점)
+# 모야 인수인계 (2026-10-04 기준, 그룹 13 완료 시점)
 
 > 이 문서를 읽는 AI에게: 이 프로젝트를 이어받아 구현을 계속한다.
-> 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md`(그룹 13) → `design.md` "Figma 와이어프레임 전면 적용 (2차)" 순으로 읽고,
+> 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md`(그룹 11) → `design.md` "Figma 와이어프레임 전면 적용 (2차)"·Open Questions 순으로 읽고,
 > 아래 "8. 시작 절차"대로 상태를 확인한 뒤 사용자에게 짧게 보고하고 작업을 시작한다.
 
 ---
@@ -13,14 +13,14 @@
 | 서비스 | 모야 — 만 5~8세 아이가 "○○이 뭐야?"라고 물으면, 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 모바일 웹 (2026 4호선톤 출품 MVP) |
 | 저장소 | `github.com/seeunnyy/moya`, 브랜치 `main` / 로컬: `C:\Users\arong\moya` (Windows) |
 | 스택 | Next.js 16.3.8 (App Router), React 19.2.8, TypeScript, Tailwind CSS 4. 추가 의존성 없음 |
-| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 79개 통과 (9.1 시점) |
+| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 81개 통과 (그룹 13 시점) |
 | 작업 방식 | OpenSpec spec-driven. 진행 중인 change는 `add-word-question-mvp` 하나 |
-| 진행률 | 그룹 1~9, 12, 10.1~10.4 완료. **그룹 13은 13.1(문서)만 완료**. 남은 것: 13.2~13.10, 11.1~11.2, 10.5(보류) |
-| 다음 할 일 | **그룹 13 코드 작업 (13.2부터). 계획은 사용자 확인 완료** |
+| 진행률 | 그룹 1~9, 12, 13, 10.1~10.4 완료 (47/50). 남은 것: 11.1~11.2, 10.5(보류) |
+| 다음 할 일 | **11.1 랜딩(S0)** → 11.2 실기기 데모 |
 
-미커밋 변경: 없음 (그룹 13 문서 커밋 직후 기준). `git status`로 다시 확인할 것.
+미커밋 변경: 없음 (그룹 13 코드·문서 커밋 직후 기준). `git status`로 다시 확인할 것.
 
-> 코드는 아직 **예전 구조**다(맥락 질문, [이거야!], [또 물어보기], 예문 표시, 최소 스타일). 문서(스펙·design·02~05)는 새 구조다. 문서가 기준이다.
+> 코드와 문서 모두 Figma 와이어프레임 구조다. 그룹 13 구현 중 정한 세부는 design.md Open Questions "작업 13.2~13.10 구현 중 정한 부분"에 있다.
 
 ---
 
@@ -92,25 +92,25 @@
 
 ---
 
-## 4. 지금 코드 (그룹 13 전, 예전 구조)
+## 4. 지금 코드 (그룹 13 후)
 
-| 파일 | 역할 | 그룹 13에서 |
-|---|---|---|
-| `src/types/index.ts` | WordEntry, WordCard, PendingWord, Candidate 등 | `WordEntry.english?` 추가 (13.3) |
-| `src/lib/config.ts` | MAX_DISTANCE=2, MAX_CANDIDATES=3, MAX_RETRY=1, MAX_RECORDING_MS=8000 | 그대로 |
-| `src/lib/pronunciation/*` | 자모·거리·역규칙·추출·후보(`inferWord`, `orderByContext`) | 그대로 |
-| `src/data/words.mock.ts` | mock 단어 10개 (검수 전) | english 채움 (13.3) |
-| `src/data/{examplePrompts,blocklist,rules}.ts` | 예시 문장 3개, 부적절 단어 mock "나쁜말", 역규칙 | 그대로 |
-| `src/lib/storage/index.ts` | `moya.cards.v1`, `moya.pending.v1` | 그대로 |
-| `src/lib/services/stt/*`, `src/app/api/stt/route.ts` | STT 어댑터(mock: 두박 → 가바 → 뿌잉뿌잉 순), `POST /api/stt` | 그대로 |
-| `src/lib/services/speech.ts` | speechSynthesis 래퍼 | 그대로 |
-| `src/lib/askFlow.ts` + `tests/askFlow.test.ts` | 묻기 흐름 reducer | **바꿈 (13.2)** |
-| `src/app/globals.css`, `src/app/layout.tsx` | 최소 스타일, Geist 폰트, 다크 모드 | 토큰·Noto Sans KR (13.4) |
-| `src/components/{Button,ImageSlot,BackHeader,BottomTabs,ScreenHeading,SoundButton}` | 공통 UI | Figma 컴포넌트로 (13.4) |
-| `src/components/AskScreen.tsx` | `/app/ask` 전 화면. 녹음·STT·저장·소리 연결 로직 포함 | 화면 전면 수정, 녹음·소리 로직은 유지 (13.6~13.8) |
-| `src/components/{HomeScreen,MicPermissionScreen,CandidatePicker,WordCardView,CardsScreen,CardDetailScreen,QuestionForm,ExamplePrompts,PrivacyNotice,useSavedWords,microphone}` | 화면·도우미 | 13.5~13.9 |
-| `src/components/{ContextPicker,heardContext,AskMoyaLink}` | 맥락 질문, 권한 확인 링크 | **삭제 (13.9)** |
-| `src/app/parent/page.tsx` | "< 홈" + h1만 | 저장·전송 안내 (13.5) |
+| 파일 | 역할 |
+|---|---|
+| `src/types/index.ts` | WordEntry(`english?` 포함), WordCard, PendingWord, Candidate 등 |
+| `src/lib/config.ts` | MAX_DISTANCE=2, MAX_CANDIDATES=3, MAX_RETRY=1, MAX_RECORDING_MS=8000 |
+| `src/lib/pronunciation/*` | 자모·거리·역규칙·추출·후보(`inferWord`. `orderByContext`는 화면에서 안 씀) |
+| `src/data/words.mock.ts` | mock 단어 10개 (검수 전, 영어 표기 포함) |
+| `src/data/{examplePrompts,blocklist,rules}.ts` | 예시 문장 3개, 부적절 단어 mock "나쁜말", 역규칙 |
+| `src/lib/storage/index.ts` | `moya.cards.v1`, `moya.pending.v1` |
+| `src/lib/services/stt/*`, `src/app/api/stt/route.ts` | STT 어댑터(mock: 두박 → 가바 → 뿌잉뿌잉 순), `POST /api/stt` |
+| `src/lib/services/speech.ts` | speechSynthesis 래퍼 |
+| `src/lib/askFlow.ts` + `tests/askFlow.test.ts` | 묻기 흐름 reducer (review·open*·showRetryGuide·back, 각 상태의 `from`) |
+| `src/app/globals.css`, `src/app/layout.tsx` | `@theme` 토큰(색·모서리·글자/줄 간격), `touch-target` 유틸, Noto Sans KR, 앱 틀 390px |
+| `src/components/{Button,ImageSlot,Header,BottomTabs,ScreenHeading,SoundButton,styles}` | Figma 공통 컴포넌트 (버튼 3종, 이미지 자리, 헤더, 하단 탭, 카드 박스) |
+| `src/components/AskScreen.tsx` | `/app/ask` 전 화면(S1·E1·E2·E3·S12·S3·S4·S5·S6). 녹음·STT·저장·소리 연결 |
+| `src/components/{HomeScreen,MicPermissionScreen,CandidatePicker,WordCardView,CardsScreen,CardDetailScreen,QuestionForm,ExamplePrompts,PrivacyNotice,useSavedWords,microphone}` | 화면·도우미 |
+| `src/app/parent/page.tsx` | 보호자 화면: 저장·전송 안내 |
+| `public/chevron.svg` | Figma Select 화살표 에셋 |
 
 코드 규칙:
 - `src/lib`, `src/data`, `src/types`끼리는 **`.ts` 확장자가 붙은 상대 경로**로 import (Node 테스트 러너). 컴포넌트에서는 `@/` 별칭.
@@ -124,11 +124,10 @@
 
 | 작업 | 내용 | 메모 |
 |---|---|---|
-| **13.2~13.10** | Figma 와이어프레임 전면 적용 (askFlow → 데이터 → 공통 → 화면 → 검증) | **다음 작업** |
-| 11.1~11.2 | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | 그룹 13 후. 05 §5 |
+| **11.1~11.2** | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | **다음 작업**. 05 §5 |
 | 10.5 | 실제 STT 연동 | **보류**. STT 확정(~10/22) 후 |
 
-검증(13.10) 메모: Figma 메타데이터(node 좌표)는 `get_metadata`(node 1271:481)로 얻는다. 비교 이미지는 scratchpad 같은 커밋하지 않는 폴더에 둔다. 비교할 때 홈은 카드 3개를 넣은 상태로 본다(0개면 배너가 숨겨져 위치가 달라짐). Chrome 확장이 연결되지 않으면 headless Chrome + Node 내장 WebSocket(CDP)으로 확인할 수 있다(이전 세션에서 사용).
+검증 방법 메모(13.10에서 사용): Figma 메타데이터(node 좌표)는 `get_metadata`(node 1271:481)로 얻는다. 비교 이미지는 scratchpad 같은 커밋하지 않는 폴더에 둔다. 비교할 때 홈은 카드 3개를 넣은 상태로 본다(0개면 배너가 숨겨져 위치가 달라짐). Chrome 확장이 연결되지 않으면 headless Chrome + Node 내장 WebSocket(CDP)으로 확인할 수 있다(이전 세션에서 사용). 13.10 결과: 화면 10개 주요 요소가 Figma 좌표와 ±1px, 예외는 확인 질문(S3) 힌트 글자 높이로 아래가 4px 밀림(의도). 375px 가로 넘침 없음.
 
 ---
 
@@ -170,5 +169,5 @@ PM 할 일: Figma 글꼴 교체 시 §2의 줄 간격 토큰 px를 Figma에도 �
 1. 이 문서, `CLAUDE.md`, `tasks.md` 그룹 13, `design.md` "Figma 와이어프레임 전면 적용 (2차)"를 읽는다.
 2. `git status`, `git log --oneline -5`로 커밋 상태를 확인한다.
 3. `npm test`, `npm run lint`를 실행한다. (`npm run build`는 개발 서버 규칙(§2-6)을 지킨다)
-4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업 = 13.2).
-5. 사용자가 진행을 요청하면 `/opsx:apply add-word-question-mvp`로 13.2부터 시작한다. 계획은 이미 확인받았으니 다시 묻지 않는다.
+4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업 = 11.1).
+5. 사용자가 진행을 요청하면 `/opsx:apply add-word-question-mvp`로 11.1부터 시작한다.

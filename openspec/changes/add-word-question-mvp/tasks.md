@@ -83,12 +83,12 @@
 화면 구성·버튼·이동·스타일을 Figma와 똑같이 만든다. 이동 기준은 Figma 연결 → Manyfast '새 플로우 1' → design.md. 로직은 askFlow만 바꾸고 pronunciation·storage·services는 그대로 둔다.
 
 - [x] 13.1 문서: 스펙 7개, design.md(2차 결정, 이전 결정 대체됨 표시), proposal, 02~05, docs/*, HANDOFF, CLAUDE.md를 새 구조로 고치고 `openspec validate`를 통과시킨다
-- [ ] 13.2 askFlow: `context`·`pickContext`·`micDenied`·`stopListening`을 없애고 `review`(결과 종류·후보·물은 말)와 `openConfirm`·`openChoose`·`openUnknown`·`showRetryGuide`·`back`(각 상태의 `from`)을 추가한다. 인식 성공 → review, 실패·추출 실패 → sttFailed, 부적절 → blocked. 테스트를 새 흐름(두박·가바·뿌잉뿌잉, [아니에요] 두 번, back, 다시 말하기 링크)으로 고친다
-- [ ] 13.3 `WordEntry.english?`를 추가하고 mock 10개에 채운다. 데이터 테스트를 통과시킨다
-- [ ] 13.4 공통: globals.css `@theme` 토큰(색·모서리·글자 크기/줄 간격, 03 §5), 다크 모드 제거, Noto Sans KR(Geist 제거), 앱 틀 최대 390px. Button 3종(primary/secondary/링크, 보이는 크기는 Figma, 누르는 영역 48px), ImageSlot(사각 "Image"/원형 "Aa"), Header(화면 이름 가운데, "<" aria-label, 오른쪽 빈칸), BottomTabs(Figma 1270:71)
-- [ ] 13.5 홈(복습 배너 N개·0개면 숨김, 큰 카드, [복습하기 · 베타]), 마이크 권한 안내([나중에 할래] → 홈, "<" 이전), /parent(헤더 "<" 홈 + 저장·전송 안내)
-- [ ] 13.6 음성 녹음: [녹음 시작](권한 미확인 → /app/mic) → [그만하기] → "생각 중…" 같은 화면, 링크 "다시 말하기", 폴백일 때만 텍스트 입력·예시 버튼. 다시 말하기 안내(E2), 부적절 단어 안내(E3). 모야 대사는 sr-only aria-live + 음성
-- [ ] 13.7 되묻기(S12: 미리보기 카드 최대 3개, 결과에 맞는 버튼 하나), 확인 질문(원형 "Aa", 힌트, 링크 "음성 재생"), 후보 카드 선택(카드 누르면 확정, [들어보기]는 소리만)
-- [ ] 13.8 단어 카드(영어 표기, 카드 박스, [🔊 들어보기]·저장 버튼 글자 결과, 링크 "단어 카드 목록으로"), 카드 상세(처음 물은 말, "<" 목록), 물어볼 단어 안내(물은 말 + Figma 줄, 저장 버튼 글자 결과, "<" 홈)
-- [ ] 13.9 단어 카드 목록: "학습 상태" Select + 칩(같은 필터 값), 2열 카드(상태 "새 단어"), 물어볼 단어 목록, 빈 상태. 안 쓰는 ContextPicker·heardContext·AskMoyaLink를 지운다
-- [ ] 13.10 검증: 흐름 체크리스트를 브라우저에서 진행하고, 화면마다 390×844 스크린샷과 Figma get_screenshot을 나란히 비교(커밋하지 않는 임시 폴더), 주요 요소 위치·크기가 Figma 메타데이터와 ±1px인지 확인, 375px 가로 넘침 확인, `npm test`·`npm run lint`·`npm run build` 통과
+- [x] 13.2 askFlow: `context`·`pickContext`·`micDenied`·`stopListening`을 없애고 `review`(결과 종류·후보·물은 말)와 `openConfirm`·`openChoose`·`openUnknown`·`showRetryGuide`·`back`(각 상태의 `from`)을 추가한다. 인식 성공 → review, 실패·추출 실패 → sttFailed, 부적절 → blocked. 테스트를 새 흐름(두박·가바·뿌잉뿌잉, [아니에요] 두 번, back, 다시 말하기 링크)으로 고친다
+- [x] 13.3 `WordEntry.english?`를 추가하고 mock 10개에 채운다. 데이터 테스트를 통과시킨다
+- [x] 13.4 공통: globals.css `@theme` 토큰(색·모서리·글자 크기/줄 간격, 03 §5), 다크 모드 제거, Noto Sans KR(Geist 제거), 앱 틀 최대 390px. Button 3종(primary/secondary/링크, 보이는 크기는 Figma, 누르는 영역 48px), ImageSlot(사각 "Image"/원형 "Aa"), Header(화면 이름 가운데, "<" aria-label, 오른쪽 빈칸), BottomTabs(Figma 1270:71)
+- [x] 13.5 홈(복습 배너 N개·0개면 숨김, 큰 카드, [복습하기 · 베타]), 마이크 권한 안내([나중에 할래] → 홈, "<" 이전), /parent(헤더 "<" 홈 + 저장·전송 안내)
+- [x] 13.6 음성 녹음: [녹음 시작](권한 미확인 → /app/mic) → [그만하기] → "생각 중…" 같은 화면, 링크 "다시 말하기", 폴백일 때만 텍스트 입력·예시 버튼. 다시 말하기 안내(E2), 부적절 단어 안내(E3). 모야 대사는 sr-only aria-live + 음성
+- [x] 13.7 되묻기(S12: 미리보기 카드 최대 3개, 결과에 맞는 버튼 하나), 확인 질문(원형 "Aa", 힌트, 링크 "음성 재생"), 후보 카드 선택(카드 누르면 확정, [들어보기]는 소리만)
+- [x] 13.8 단어 카드(영어 표기, 카드 박스, [🔊 들어보기]·저장 버튼 글자 결과, 링크 "단어 카드 목록으로"), 카드 상세(처음 물은 말, "<" 목록), 물어볼 단어 안내(물은 말 + Figma 줄, 저장 버튼 글자 결과, "<" 홈)
+- [x] 13.9 단어 카드 목록: "학습 상태" Select + 칩(같은 필터 값), 2열 카드(상태 "새 단어"), 물어볼 단어 목록, 빈 상태. 안 쓰는 ContextPicker·heardContext·AskMoyaLink를 지운다
+- [x] 13.10 검증: 흐름 체크리스트를 브라우저에서 진행하고, 화면마다 390×844 스크린샷과 Figma get_screenshot을 나란히 비교(커밋하지 않는 임시 폴더), 주요 요소 위치·크기가 Figma 메타데이터와 ±1px인지 확인, 375px 가로 넘침 확인, `npm test`·`npm run lint`·`npm run build` 통과

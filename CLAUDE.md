@@ -20,7 +20,7 @@ This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 �
 - GitHub
 
 ## Current Stage
-Session 5: OpenSpec `add-word-question-mvp` — 그룹 13(Figma 와이어프레임 전면 적용) 문서 완료, 코드 작업 시작 전(계획 확인 완료). 그다음 11.1 랜딩 → 11.2 실기기 데모, 10.5 실제 STT는 확정 후 (상세는 planning/HANDOFF.md)
+Session 6: OpenSpec `add-word-question-mvp` — 그룹 13(Figma 와이어프레임 전면 적용) 코드까지 완료. 다음은 11.1 랜딩 → 11.2 실기기 데모, 10.5 실제 STT는 확정 후 (상세는 planning/HANDOFF.md)
 
 ## Working Rules
 - Read relevant files before suggesting changes.
