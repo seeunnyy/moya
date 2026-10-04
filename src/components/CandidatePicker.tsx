@@ -1,9 +1,11 @@
-// 후보 카드 2~3개 + [여기 없어요] (S4, Figma 7).
-// 카드마다 [들어보기](단어와 힌트를 소리로)와 [이거야!](확정)를 둔다 (D3).
+// 후보 카드 선택 (S4, Figma 1270:273): 후보 카드 세로 최대 3개 + [여기 없어요].
+// 카드 자체를 누르면 그 단어로 확정한다. [들어보기]는 소리만 내고 선택하지 않는다.
+// 버튼 안에 버튼을 넣을 수 없어서, 카드 전체를 덮는 고르기 버튼 위에 [들어보기]를 올린다.
 
 import type { Candidate } from "@/types";
 import { Button } from "./Button";
 import { SoundButton } from "./SoundButton";
+import { boxClass } from "./styles";
 
 type Props = {
   candidates: Candidate[];
@@ -13,26 +15,35 @@ type Props = {
 
 export function CandidatePicker({ candidates, onPick, onNone }: Props) {
   return (
-    <div className="flex flex-col gap-3">
-      <ul className="flex flex-col gap-3">
+    <>
+      <ul className="flex w-full flex-col gap-3">
         {candidates.map(({ entry }) => (
-          <li key={entry.id} className="flex flex-col gap-2 rounded-lg border-2 border-current p-3">
-            <p className="text-xl font-bold">{entry.word}</p>
-            <p className="break-keep">{entry.hint}</p>
-            <div className="grid grid-cols-2 gap-2">
-              <SoundButton
-                label="들어보기"
-                text={`${entry.word}. ${entry.hint}`}
-                ariaLabel={`${entry.word} 들어보기`}
-              />
-              <Button onClick={() => onPick(entry.id)} aria-label={`${entry.word}, 이거야!`}>
-                이거야!
-              </Button>
+          <li key={entry.id} className={`${boxClass} relative`}>
+            <button
+              type="button"
+              onClick={() => onPick(entry.id)}
+              aria-label={`${entry.word} 고르기`}
+              className="absolute inset-0 rounded-box"
+            />
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <p className="text-title font-bold">{entry.word}</p>
+                {/* touch-target이 position: relative라 고르기 버튼 위에 그려지고 눌린다 */}
+                <SoundButton
+                  label="들어보기"
+                  variant="primary"
+                  text={`${entry.word}. ${entry.hint}`}
+                  ariaLabel={`${entry.word} 들어보기`}
+                />
+              </div>
+              <p className="text-caption">{entry.hint}</p>
             </div>
           </li>
         ))}
       </ul>
-      <Button onClick={onNone}>여기 없어요</Button>
-    </div>
+      <Button variant="secondary" onClick={onNone}>
+        여기 없어요
+      </Button>
+    </>
   );
 }

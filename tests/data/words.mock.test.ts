@@ -28,3 +28,9 @@ test("필수 내용이 비어 있지 않고 상황 태그가 1개 이상", () =>
 test("id가 겹치지 않는다", () => {
   assert.equal(new Set(MOCK_WORDS.map((w) => w.id)).size, MOCK_WORDS.length);
 });
+
+test("영어 표기가 10개 모두 채워져 있다 (단어 카드 S5)", () => {
+  for (const w of MOCK_WORDS) {
+    assert.ok(w.english && w.english.trim().length > 0, w.word);
+  }
+});

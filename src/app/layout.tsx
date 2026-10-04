@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Figma는 Inter(한글은 대체 폰트)지만 코드는 한글 폰트를 쓴다 (design.md W1). 줄 간격은 globals.css 토큰으로 고정.
+const notoSansKr = Noto_Sans_KR({
+  variable: "--font-noto-sans-kr",
   subsets: ["latin"],
 });
 
@@ -19,11 +15,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="ko" className={`${notoSansKr.variable} h-full antialiased`}>
+      <body className="min-h-full">
+        {/* 앱 틀: Figma 프레임 폭 390px, 가운데 정렬 (design.md W5). 화면은 헤더·본문·하단 탭을 바로 넣는다 */}
+        <div className="mx-auto flex min-h-dvh w-full max-w-[390px] flex-col bg-white">{children}</div>
+      </body>
     </html>
   );
 }

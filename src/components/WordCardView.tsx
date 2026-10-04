@@ -1,56 +1,69 @@
-// 단어 카드 본문 (S5 묻기 흐름의 단어 카드, S11 카드 상세에서 같이 쓴다, Figma 8).
-// 설명·예문은 검수된 단어 데이터(카드에 복사된 값)를 그대로 보여준다.
+// 단어 카드 (S5 묻기 흐름, S11 카드 상세에서 같이 쓴다, Figma 1270:321).
+// 설명은 검수된 단어 데이터(카드에 복사된 값)를 그대로 보여준다. 예문은 데이터에만 두고 화면에는 보여주지 않는다.
 
-import type { HeardContext } from "@/types";
-import { contextOption } from "./heardContext";
+import type { ReactNode } from "react";
+import { LinkButton } from "./Button";
 import { ImageSlot } from "./ImageSlot";
+import { ScreenHeading } from "./ScreenHeading";
 import { SoundButton } from "./SoundButton";
+import { boxClass } from "./styles";
 
 type Props = {
   word: string;
+  english?: string; // 없으면 그 줄을 숨긴다
   kidExplanation: string;
-  example: string;
-  heardContext?: HeardContext;
-  spokenAs?: string; // 카드 상세에서만 넘긴다. "처음엔 '두박'이라고 물어봤어"
+  action: ReactNode; // [🔊 들어보기] 옆: S5는 저장 버튼, S11은 처음 물은 말
+  focusKey?: string;
 };
 
-// 단어 카드를 소리로 읽을 문장: "수박이 뭐야? <쉬운 설명>". S5에 들어설 때와 [🔈 들어보기]가 같은 문장을 읽는다.
+// 단어 카드를 소리로 읽을 문장: "수박이 뭐야? <쉬운 설명>". S5에 들어설 때와 [🔊 들어보기]가 같은 문장을 읽는다.
 export function cardSpeech(word: string, kidExplanation: string): string {
-  return `${word}${hasFinalConsonant(word) ? "이" : "가"} 뭐야? ${kidExplanation}`;
+  return `${whatIs(word)} ${kidExplanation}`;
+}
+
+// "수박이 뭐야?" / "가방이 뭐야?" / "우주가 뭐야?"
+function whatIs(word: string): string {
+  return `${word}${hasFinalConsonant(word) ? "이" : "가"} 뭐야?`;
 }
 
 // 마지막 글자에 받침이 있는지. 조사(이/가, 이라고/라고)를 고를 때 쓴다.
-function hasFinalConsonant(word: string): boolean {
+export function hasFinalConsonant(word: string): boolean {
   const last = word.charCodeAt(word.length - 1);
   return last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
 }
 
-export function WordCardView({ word, kidExplanation, example, heardContext, spokenAs }: Props) {
+export function WordCardView({ word, english, kidExplanation, action, focusKey }: Props) {
   return (
-    <article aria-label={`${word} 단어 카드`} className="flex flex-col gap-3 rounded-lg border-2 border-current p-4">
-      <ImageSlot label="단어 그림 자리" />
-      <div>
-        <p className="text-3xl font-bold break-keep">{word}</p>
-        {spokenAs && (
-          <p className="text-sm break-keep">
-            처음엔 &lsquo;{spokenAs}&rsquo;{hasFinalConsonant(spokenAs) ? "이라고" : "라고"} 물어봤어
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col items-center gap-2">
+        <ImageSlot className="h-[180px] w-full" />
+        <ScreenHeading focusKey={focusKey} className="text-word font-bold">
+          {word}
+        </ScreenHeading>
+        {english && (
+          <p lang="en" className="text-caption">
+            {english}
           </p>
         )}
       </div>
-      <p className="text-lg font-semibold break-keep">{word}{hasFinalConsonant(word) ? "이" : "가"} 뭐야?</p>
-      <p className="break-keep">{kidExplanation}</p>
-      <section aria-label="예문" className="flex flex-col gap-1">
-        <p className="text-sm font-semibold">이렇게 써</p>
-        <p className="break-keep">{example}</p>
-      </section>
-      {heardContext && (
-        <p className="text-sm break-keep">{contextOption(heardContext)?.label}에서 들은 말이야.</p>
-      )}
-      <SoundButton
-        label="🔈 들어보기"
-        text={cardSpeech(word, kidExplanation)}
-        ariaLabel={`${word} 설명 들어보기`}
-      />
-    </article>
+      <div className={boxClass}>
+        <div className="flex flex-col gap-3">
+          <p className="text-body font-semibold">{whatIs(word)}</p>
+          <p className="text-body font-semibold">{kidExplanation}</p>
+          <ImageSlot className="h-[100px] w-full" />
+        </div>
+      </div>
+      <div className="flex flex-wrap items-start gap-x-3">
+        <SoundButton
+          label="🔊 들어보기"
+          text={cardSpeech(word, kidExplanation)}
+          ariaLabel={`${word} 설명 들어보기`}
+        />
+        {action}
+      </div>
+      <div className="flex flex-col items-center">
+        <LinkButton href="/app/cards">단어 카드 목록으로</LinkButton>
+      </div>
+    </div>
   );
 }

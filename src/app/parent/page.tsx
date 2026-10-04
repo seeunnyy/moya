@@ -1,12 +1,19 @@
-import { BackHeader } from "@/components/BackHeader";
+import { Header } from "@/components/Header";
+import { PrivacyNotice } from "@/components/PrivacyNotice";
+import { ScreenHeading } from "@/components/ScreenHeading";
+import { boxClass } from "@/components/styles";
 
-// /parent 보호자 (S8). 부모 리포트는 베타. 지금은 홈으로 돌아가는 길만 둔다.
+// /parent 보호자 (S8, Figma 프레임 없음 → Figma 헤더와 카드 박스로만 조립). 부모 리포트는 베타.
 export default function ParentPage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 py-6">
-      <BackHeader href="/app" backLabel="홈">
-        부모 리포트
-      </BackHeader>
-    </main>
+    <>
+      <Header title="보호자 화면" back={{ href: "/app", label: "홈으로" }} />
+      <main className="flex flex-col gap-4 p-6">
+        <ScreenHeading>저장·전송 안내</ScreenHeading>
+        <div className={boxClass}>
+          <PrivacyNotice />
+        </div>
+      </main>
+    </>
   );
 }

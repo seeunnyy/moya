@@ -1,11 +1,11 @@
 "use client";
 
-// 소리 버튼 ([🔈 들어보기], [음성 재생], 후보 카드 [들어보기]). 누르면 text를 처음부터 읽는다 (FR-08).
+// 소리 버튼 ([🔊 들어보기], 링크 "음성 재생", 되묻기·후보 카드 [들어보기]). 누르면 text를 처음부터 읽는다 (FR-08).
 // 기기가 한국어 음성 출력을 못 하면 비활성으로 두고, 화면 글자만으로 진행한다.
 
 import { useSyncExternalStore } from "react";
 import { speaker } from "@/lib/services/speech";
-import { Button } from "./Button";
+import { Button, type ButtonVariant } from "./Button";
 
 // 브라우저가 음성 목록을 늦게 채우면 지원 여부가 바뀌므로 다시 확인한다.
 function subscribe(onChange: () => void) {
@@ -20,13 +20,17 @@ type Props = {
   label: string;
   text: string; // 읽을 문장
   ariaLabel?: string;
+  variant?: ButtonVariant; // Figma: 단어 카드·되묻기 secondary, 후보 카드 primary, 확인 질문 링크
+  className?: string;
 };
 
-export function SoundButton({ label, text, ariaLabel }: Props) {
+export function SoundButton({ label, text, ariaLabel, variant = "secondary", className }: Props) {
   const supported = useSyncExternalStore(subscribe, supportedOnClient, supportedOnServer);
 
   return (
     <Button
+      variant={variant}
+      className={className}
       onClick={() => speaker.speak(text)}
       disabled={!supported}
       aria-label={ariaLabel}

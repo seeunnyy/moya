@@ -1,4 +1,5 @@
-// 텍스트로 질문하기. 마이크를 못 쓸 때의 폴백이자, 음성 연동 전 기본 입력 (S1, E1, E2).
+// 글자로 물어보기. 마이크를 쓸 수 없을 때(E1)만 음성 녹음 화면의 [녹음 시작] 아래에 보인다.
+// Figma에 없는 상태라 Figma Input(Select) 모양과 버튼으로만 조립한다.
 
 import { Button } from "./Button";
 
@@ -9,7 +10,7 @@ type Props = {
 export function QuestionForm({ onAsk }: Props) {
   return (
     <form
-      className="flex flex-col gap-2"
+      className="flex w-full flex-col gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -18,18 +19,20 @@ export function QuestionForm({ onAsk }: Props) {
         form.reset();
       }}
     >
-      <label htmlFor="question" className="font-semibold">
+      <label htmlFor="question" className="text-button">
         글자로 물어보기
       </label>
-      <input
-        id="question"
-        name="question"
-        type="text"
-        placeholder="공룡이 뭐야?"
-        autoComplete="off"
-        className="min-h-12 w-full rounded-lg border-2 border-current px-3 text-base"
-      />
-      <Button type="submit">물어보기</Button>
+      <div className="flex gap-3">
+        <input
+          id="question"
+          name="question"
+          type="text"
+          placeholder="공룡이 뭐야?"
+          autoComplete="off"
+          className="h-[38px] min-w-0 flex-1 rounded-select border border-line bg-white px-3 text-button placeholder:text-placeholder"
+        />
+        <Button type="submit">물어보기</Button>
+      </div>
     </form>
   );
 }
