@@ -33,7 +33,7 @@ schema: spec-driven
 
 context: |
   서비스: 모야 — 만 5~8세 아이가 들은 단어를 "○○이 뭐야?"라고 음성으로 물으면, 외계인 친구 모야가 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 어휘 학습 모바일 웹 (2026 4호선톤 출품 MVP)
-  형태: 모바일 웹, 세로 375px 기준, 로그인 없음
+  형태: 모바일 웹, 세로 402px 기준(375·390px 넘침 없음), 디자인 기준은 완성 피그마 U3GaTLJGAbLj5qgTTJiodv. 가입·로그인은 기기 저장 mock(서버 계정 없음)
   기술 스택: Next.js (App Router), React, TypeScript, Tailwind CSS
   제약:
     - 해커톤 외부 API는 음성인식(STT) 하나. 음성 출력은 브라우저 내장 음성합성
