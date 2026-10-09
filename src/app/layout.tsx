@@ -41,8 +41,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${notoSansKr.variable} ${jua.variable} ${nanumSquareRound.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        {/* 앱 틀: 피그마 프레임 폭 402px, 가운데 정렬, 크림 배경. 화면은 헤더·본문·하단 탭을 바로 넣는다 */}
-        <div className="mx-auto flex min-h-dvh w-full max-w-[402px] flex-col bg-cream">{children}</div>
+        {/* 앱 틀: 피그마 프레임 폭 402px, 가운데 정렬, 크림 배경. 화면은 헤더·본문·하단 탭을 바로 넣는다.
+            화면이 402px보다 넓을 때만 옅은 그림자로 휴대폰처럼 보이게 한다 (피그마에 없음) */}
+        <div className="mx-auto flex min-h-dvh w-full max-w-[402px] flex-col bg-cream min-[403px]:shadow-app">{children}</div>
       </body>
     </html>
   );

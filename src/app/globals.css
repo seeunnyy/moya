@@ -54,6 +54,8 @@
   --color-dim: rgba(36, 31, 72, 0.45); /* 시트·확인 창 뒤 어두운 배경 */
   --color-kakao: #fee500; /* 카카오 버튼 */
   --color-kakao-text: #191919;
+  /* PC 화면(폭 403px 이상)에서만: 앱 칸 바깥 배경과 앱 칸 그림자. 피그마에 없음 (design.md Open Questions) */
+  --color-desktop-bg: #eceaf2;
 
   /* 카드 색 (단어 카드 타일 배경·카드 머리띠. 단어·상태마다 다름) */
   --color-tint-yellow: #fff2c7;
@@ -63,6 +65,7 @@
   --color-tint-sky: #e3f0ff;
 
   /* 그림자 (피그마 값 그대로) */
+  --shadow-app: 0 0 32px 0 rgba(36, 31, 72, 0.08);
   --shadow-tabbar: 0 -1px 0 0 rgba(185, 169, 138, 0.12), 0 -6px 24px 0 rgba(91, 69, 200, 0.1);
   --shadow-card: 0 6px 0 0 var(--color-beige-shadow);
   --shadow-key: 0 4px 0 0 var(--color-beige-shadow);
@@ -236,9 +239,16 @@
 }
 
 body {
+  /* 402px 이하 휴대폰은 앱 칸과 같은 크림(당겨서 늘어나는 바깥도 같은 색). 더 넓으면 회색 바깥 */
   background: var(--color-cream);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+@media (min-width: 403px) {
+  body {
+    background: var(--color-desktop-bg);
+  }
 }
 
 /* 키보드 포커스가 항상 보이게 한다 (NFR-08). 색은 디자인 작업에서 정한다. */
