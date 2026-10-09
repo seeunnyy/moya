@@ -6,8 +6,7 @@ import {
   type AskAction,
   type AskState,
 } from "../src/lib/askFlow.ts";
-import { MOCK_WORDS } from "../src/data/words.mock.ts";
-import { EXAMPLE_PROMPTS } from "../src/data/examplePrompts.ts";
+import { LEGACY_WORDS as MOCK_WORDS } from "./fixtures/legacyWords.ts";
 import { BLOCKED_WORDS } from "../src/data/blocklist.ts";
 
 const reduce = createAskReducer(MOCK_WORDS);
@@ -174,7 +173,8 @@ test("지금 상태에 맞지 않는 동작은 무시한다", () => {
 });
 
 test("05 §5 데모: 예시 질문만으로 수박·가방 설명, 뿌잉뿌잉 물어볼 단어 (QA-11)", () => {
-  const [dubak, gaba, ppuing] = EXAMPLE_PROMPTS;
+  // 옛 시연 문장 (픽스처 단어용). 새 흐름 테스트는 그룹 3에서 다시 쓴다
+  const [dubak, gaba, ppuing] = ["두박이 뭐야?", "가바가 뭐야?", "뿌잉뿌잉이 뭐야?"];
 
   const suBak = run([ask(dubak), { type: "openConfirm" }, { type: "confirmYes" }]);
   assert.equal(suBak.phase === "explaining" && suBak.entry.word, "수박");

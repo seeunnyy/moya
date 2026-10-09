@@ -1,18 +1,20 @@
 // 공통 타입 (planning/md-design/04_TECHNICAL_DESIGN.md §3)
 
-// 들은 상황 (맥락 질문의 버튼 값, 잠정)
-export type HeardContext = "tv" | "book" | "adult" | "school";
+// 들은 곳 (2-5 "어디서 들었어?"의 버튼 값: 집 · 유치원·학교 · TV·영상 · 책 · 밖에서)
+export type HeardContext = "home" | "school" | "tv" | "book" | "outside";
 
-// 검수된 단어 데이터 (src/data)
+// 검수된 단어 데이터 (src/data). 빈 문자열("")은 피그마에 문구가 없어 PM이 채울 칸이다.
 export type WordEntry = {
   id: string; // 예: "jeogeumtong-1"
   word: string; // 표제어
   senseId: number; // 동음이의어 구분
-  hint: string; // 확인 질문·후보 카드에 붙는 짧은 힌트
-  contextTags: HeardContext[]; // 아이가 이 단어를 주로 듣는 상황
-  kidExplanation: string; // 아이 눈높이 설명 (한두 문장)
-  example: string; // 일상 예문 1개 (데이터에만 두고 화면에는 보여주지 않음)
-  english?: string; // 영어 표기 (단어 카드에 작게, 없으면 숨김)
+  image: string; // 단어 그림 (public 경로, 예: "/words/jeogeumtong.svg")
+  hint: string; // 확인 질문(2-4)·후보 고르기(2-6) 카드의 짧은 힌트
+  contextTags: HeardContext[]; // 아이가 이 단어를 주로 듣는 곳
+  bubbleExplanation?: string; // 뜻 알려주기(2-9) 말풍선 설명. 줄바꿈은 \n. 없으면 kidExplanation
+  kidExplanation: string; // 카드(2-10, 3-2, 3-3)의 아이 눈높이 설명 (한두 문장)
+  example: string; // 카드에 보이는 예문 1개 (화면에서 앞에 "예) "를 붙인다)
+  english?: string; // 영어 표기 (새 피그마에서는 화면에 쓰지 않음, 데이터에만)
   dictDefinition: string; // 사전 뜻풀이 (검수 기준)
   source: string; // 사전 출처
   reviewed: boolean; // 검수 완료 여부

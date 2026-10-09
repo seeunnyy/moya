@@ -7,6 +7,7 @@ export function makeEntry(word: string, contextTags: HeardContext[]): WordEntry 
     id: `${word}-1`,
     word,
     senseId: 1,
+    image: "",
     hint: "",
     contextTags,
     kidExplanation: "",

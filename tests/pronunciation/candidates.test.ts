@@ -6,7 +6,7 @@ import {
   orderByContext,
 } from "../../src/lib/pronunciation/candidates.ts";
 import type { Candidate, CandidateResult } from "../../src/types/index.ts";
-import { MOCK_WORDS } from "../../src/data/words.mock.ts";
+import { LEGACY_WORDS as MOCK_WORDS } from "../fixtures/legacyWords.ts";
 import { makeEntry } from "./fixtures.ts";
 
 const words = (candidates: Candidate[]) => candidates.map((c) => c.entry.word);
