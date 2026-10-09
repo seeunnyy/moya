@@ -38,19 +38,22 @@
 - 모야의 문장 틀은 짧고 쉬운 반말이다. S3 대사는 고정 문장 틀에 단어별 힌트를 붙인다. 예: "저금통 말하는 거야? 돈을 모아 두는 통!" (문장 틀 목록은 TBD)
 
 ## 2. Components
-| 컴포넌트 | 역할 | 쓰는 화면 |
-|---|---|---|
-| Button | Figma 버튼 3종: primary(1270:7) / secondary(1270:9) / 링크(1270:3). 보이는 크기는 Figma, 누르는 영역은 48px 이상 | 전체 |
-| ImageSlot | Figma 이미지 자리(1270:62 사각 "Image", 1270:64 원형 "Aa") | 전체 |
-| Header (BackHeader) | 화면 이름 가운데 + 왼쪽 "<"(20px 칸, aria-label) + 오른쪽 20px 빈칸. S9·S7은 "<" 없음 | 전체 |
-| BottomTabs | Figma 하단 탭(1270:71): [홈] [단어 카드] [보호자] | S9, S7 |
-| 카드 박스 | 배경·테두리·여백 12px 박스. 큰 메뉴 카드, 배너, 후보 카드, 단어 카드 본문, 목록 카드 | S9, S12, S3~S7 |
-| SoundButton | [들어보기]·[🔊 들어보기]·"음성 재생" (소리, 미지원이면 비활성) | S12, S3, S4, S5 |
-| CandidatePicker | 후보 카드 세로 목록 + [여기 없어요]. 카드 전체가 선택, [들어보기]는 소리만 | S4 |
-| WordCardView | 단어 카드 본문 | S5, S11 |
-| QuestionForm · ExamplePrompts | 텍스트 입력, 서툰 발음 예시 버튼 (마이크를 못 쓸 때만) | E1 |
-| Select · Chip | "학습 상태" Select와 필터 칩 (같은 값 공유) | S7 |
-| PrivacyNotice | 저장·전송 안내 | S8 |
+완성 피그마(U3GaTLJGAbLj5qgTTJiodv) 부품. 코드는 `src/components/ui/`, 모음은 개발용 주소 `/dev/components`(운영 빌드에서는 404). 옛 와이어프레임 부품(Button·ImageSlot·Header·BottomTabs 등 `src/components/*.tsx`)은 화면을 교체하는 그룹에서 지운다.
+
+| 부품 (파일) | 피그마 노드 | 상태·변형 | 쓰는 화면 |
+|---|---|---|---|
+| KidHeader, MissionTracker, TopChip (`KidHeader.tsx`) | 아이 헤더 180:6313, 상단 칩 180:5594 | 미션 0~3/3. 칩: 별·연속 학습 × 기본·호버·누름·비활성. 미션 칸 32(헤더)·40(시트) | 아이 화면 전체, 2-0 |
+| TabBar (`TabBar.tsx`) | 탭바 180:6388, 탭 아이템 180:5756 | 선택됨·기본·호버·누름·비활성, 아래 여백 max(46px, safe-area) | 아이 화면 전체 |
+| SpeechBubble (`SpeechBubble.tsx`) | 말풍선 180:6685 | 꼬리 아래·위·왼쪽·없음, 스피커 있음/없음, 대사 aria-live | 모야 대사 화면 전체 |
+| SpeakerButton (`buttons.tsx`) | 다시 듣기 180:5725 | 기본·호버·누름·재생 중·비활성, 30·24px | 말풍선, 카드, 소리 칩 |
+| MicButton (`MicButton.tsx`) | 마이크 버튼 180:5892 | 기본·호버·누름(같은 상태에서 그림 교체)·듣는 중·비활성 | 2-1~2-3, 2-7, 2-11, 2-12 |
+| Button (`buttons.tsx`) | 버튼 180:6627 | primary·secondary·dashed·danger × 기본·누름·비활성(피그마에 호버 없음), 높이 60, 아이콘 선택 | 전체 |
+| CircleButton, RoundActionButton, KakaoButton, BetaBadge (`buttons.tsx`) | 원형 버튼 180:6665, 보조 버튼 180:5651, 1-2 카카오 180:7245, 베타 배지 180:6674 | 원형 52: 기본·누름, 배지. 원형 60+이름(오늘의 단어·지구 사전): 기본·호버·누름·비활성 | 상단 바, 2-0, 2-10, 1-0, 1-2, 보호자 |
+| CandidateCard, ContextChip, WordTile, WordCardSimple, WordCardDetailed, StarProgress, SoundChip, LetterTiles (`cards.tsx`) | 후보 카드 180:6729, 맥락 칩 180:6757, 타일 180:6772, 큰 카드 180:6793, 별 진행 180:6708 | 후보: 기본·누름·선택됨(카드가 버튼, 스피커는 따로). 타일: NEW·복습 별·다 앎 도장, 색(tint). 큰 카드: 간단·자세히 | 2-4~2-10, 3-1~3-3 |
+| MoyaImage, MoyaStage, GiftButton (`Moya.tsx`) | 표정 180:6098, 무대 180:6824, 오늘의 단어 버튼 180:6836 | 표정 5종(인사·설명·궁금·당황·신남) × 투명·크림 | 아이 화면 |
+| BottomSheet, ConfirmDialog, Toast (`overlays.tsx`) | 미션 시트 180:7049, 확인 창 180:8062, 알림 180:7965, 어두운 배경 180:8061 | 시트·확인 창은 Esc·바깥 누름으로 닫음. 확인 창 버튼 danger/primary | 2-0, 5-7~5-9, 5-3a, 5-4a |
+| TextField, Checkbox, TermsRow, Toggle, AgeChip(s), TextDivider, PinDots, PinKeypad (`forms.tsx`) | 1-2 본문 180:7242, 선택 요소 180:6291, 비밀번호 180:6260 | 체크박스·토글 켜짐/꺼짐, 나이 칩 선택/기본, 비밀번호 점 0~4, 키패드(누름 모양은 피그마에 없어 원형 버튼 방식) | 온보딩, 보호자 |
+| TopBar, StepProgress, BottomPanel, IconCircle, SettingsGroup, SettingsRow (`bars.tsx`) | 1-2 상단 바 180:7235, 하단 패널 180:7274, 5-4 상단 바 180:8019, 목록 180:8030, 잠금 칸 180:7424·180:7908 | 상단 바 왼쪽 뒤로/닫기 + 진행 표시/제목. 잠금 칸 72·80, 틀림 색. 설정 줄 오른쪽: 화살표·토글·글·베타 | 온보딩, 보호자 |
 
 ## 3. Interactions
 - **마이크:** [녹음 시작]을 누르면 권한을 아직 묻지 않았을 때는 권한 안내(S10)로 가고, 허용돼 있으면 바로 녹음한다. 같은 화면에서 버튼이 [그만하기] → "생각 중…"으로 바뀐다. [그만하기]나 최대 녹음 시간(8초, 잠정)으로 끝낸다.
@@ -74,31 +77,15 @@
 - 아이 화면의 문장은 짧고 쉬운 말로 쓴다.
 
 ## 5. Visual
-Figma 와이어프레임 값(변수 없음)을 `src/app/globals.css`의 `@theme` 토큰으로 한 번만 정의하고 화면에서는 토큰을 쓴다. 다크 모드는 와이어프레임 단계에서 쓰지 않는다. 캐릭터·색 디자인은 10/29 시안 후.
+완성 피그마 변수와 부품 상태 값을 `src/app/globals.css` `@theme`에 한 번만 정의하고 화면에서는 토큰만 쓴다(색을 코드에 직접 적지 않는다). 다크 모드는 쓰지 않는다. 전체 토큰 표는 `openspec/changes/apply-hifi-design/design.md` "그룹 1에서 받은 재료"와 "그룹 2에서 만든 부품".
 
 | 용도 | 값 |
 |---|---|
-| 폰트 | 코드: Noto Sans KR (next/font/google). Figma: Inter(한글 대체 폰트) → PM이 교체 예정 |
-| 기본 글자 | #1f2937 |
-| 링크 버튼 | 글자 #6b7280, 14px Regular, 밑줄, 배경 없음 |
-| primary 버튼 | 배경 #1f2937, 흰 글자 14px Medium, 여백 8px 16px, 모서리 6px, 최소 폭 60px |
-| secondary 버튼 | 흰 배경, 테두리 1px #1f2937, 글자 #1f2937 14px Medium, 여백 8px 16px, 모서리 6px |
-| 칩 | 기본: 배경 #f3f4f6, 테두리 1px #e5e7eb / 선택: 배경 #1f2937 흰 글자. 14px Medium, 여백 6px 12px, 모서리 999px |
-| Select | 라벨 14px, 상자 높이 38px, 흰 배경, 테두리 1px #d1d5db, 모서리 4px, 여백 8px 12px, "Select…" #9ca3af, 화살표 12px |
-| 카드 박스 | 배경 #f9fafb, 테두리 1px #e5e7eb, 모서리 6px, 안쪽 여백 12px |
-| 이미지 자리 | 배경 #f9fafb, 점선 1px #d1d5db, 모서리 6px, 가운데 "Image" 11px #9ca3af. 원형: 배경 #d1d5db, "Aa" 11px 흰색 |
-| 힌트 막대 자리 | 배경 #e5e7eb, 모서리 4px (S3, 힌트 글자를 넣음) |
-| 헤더 | 흰 배경, 아래 테두리 1px #d0d0d0, 여백 12px 24px, "<" 20px(20px 칸) + 제목 16px Medium 가운데 + 오른쪽 20px 빈칸 |
-| 하단 탭 | 배경 #f5f5f5, 위 테두리 1px #d0d0d0, 3칸 균등, 칸마다 20px 회색(#d1d5db, 모서리 6px) 아이콘 + 링크 글자, 위아래 8px |
-| 본문 | 여백 24px. 화면별 간격은 Figma get_design_context 값 |
-
-글자 크기와 줄 간격 토큰 (Figma의 "normal" 줄 높이를 px로 고정. Figma 글꼴 교체 때 Figma에도 같은 px를 넣는다):
-
-| 토큰 | 크기 | 줄 간격 | 굵기·쓰는 곳 |
-|---|---|---|---|
-| `text-word` | 28px | 34px | Bold — 단어 카드 단어 |
-| `text-title` | 20px | 24px | Bold — 화면 제목, 후보 단어 |
-| `text-body` | 16px | 19px | SemiBold/Medium — 소제목, 카드 글자, 헤더 |
-| `text-button` | 14px | 17px | Medium/Regular — 버튼, 링크, 칩, Select |
-| `text-caption` | 12px | 15px | Regular — 보조 문구, 상태 글자 |
-| `text-label` | 11px | 13px | Regular — 이미지 자리 글자 |
+| 글꼴 | Jua(말풍선·제목·버튼, `font-jua`), 나눔스퀘어라운드 ExtraBold(하단 탭, `font-nanum-round`), Noto Sans KR(본문, 기본) |
+| 글자 스타일 | `type-*` 15종: 모야/단어 큰 44·1.15, 제목 XL 34·1.25, L 26·1.3, M 21·1.35, 말풍선 20·1.5, 버튼 20·1.2, 라벨 15·1.3 / 보호자 제목 22 Bold·1.35, 소제목 17 Bold·1.4 / 본문 15·1.55, 굵게 15 Bold, 작게 13·1.5, 캡션 12 Medium·1.4 |
+| 색 (피그마 변수) | 크림 #fdf9ed, 보호자 배경 #f6f5fa, 글자 진함 #241f48·보통 #6f6a8c·흐림 #9e98bf·비활성 #bdb8c8, 선 연보라 #d9d0ff·베이지 #efe6d3, 브랜드 보라 #7b61f8·진보라 #6a4ff3·연보라 #a08dff·라벤더 #eeeaff·아주 연한 #f6f3ff, 라임 #d2ec7c, 코랄 #ff6b5b, 베타 글자 #d9573f·배경 #ffe3dc |
+| 상태 색 (변수 아님, 상태 보드 값) | 다시 듣기 호버 #8f78ff·누름 #5a3fe0, 주 버튼 그림자 #4a35c9, 비활성 #d6d1e2(그림자 #c3bcd3), 칩 호버 #fbf9ff·누름 #f1edff(테두리 #c9bdff), 흰 부품 그림자 #faedd1, 보조 그림자 #e4dcff, 말풍선 테두리 #e0ddd7·그림자 #f1e4c8, 어두운 배경 rgba(36,31,72,.45), 카카오 #fee500 |
+| 카드 색 | 노랑 #fff2c7, 라임 #e6f4c4, 초록 #e3f5d6, 라벤더 #eeeaff, 하늘 #e3f0ff (단어·상태마다, 화면 그룹에서 매핑) |
+| 모서리 | 큰 버튼 20, 말풍선 18, 큰 카드 28, 후보 카드 22, 타일 24, 입력칸·나이 칩 16, 키 18, 시트 위 32, 탭바·하단 패널 위 28, 확인 창 26, 원형 52/60 |
+| 누르는 영역 | 마이크 118, 주요 버튼 높이 60, 카드형 114 이상(타일). 그보다 작은 버튼(스피커·칩·체크박스·토글·화살표)은 `touch-target`으로 48×48 이상 |
+| 호버 | Tailwind 기본대로 호버를 지원하는 기기에서만 적용(휴대폰 터치에서는 기본·누름만 보임) |
