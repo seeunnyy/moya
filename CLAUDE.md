@@ -5,6 +5,7 @@
 - 기획서 원본: 노션 '모야 기획서' (💻 4호선톤 / 백석대학교 2026 1학기). 기획 판단이 필요하면 먼저 확인한다.
 - 역할: PM(기획·디자인) + 바이브코딩 구현. 팀: FE·BE 모집 중 (TBD)
 - 일정: 11/5 1차 배포, 11/20 최종 배포 (상세는 planning/md-design/05_DELIVERY_PLAN.md)
+- 디자인 기준: 완성 피그마 https://www.figma.com/design/U3GaTLJGAbLj5qgTTJiodv/4%ED%98%B8%EC%84%A0%ED%86%A4?node-id=180-5325 ('디자인' 페이지, 64장, 프레임 402×874). 화면 구성·버튼·이동·스타일을 이 피그마와 똑같이. 결정·비교 기준·노드 지도는 planning/prompts/design-v2-2026-10-09.md (옛 회색 와이어프레임 rJZjG6ik2Q2ffj1BiK20U8은 더 이상 기준 아님)
 
 ## Product Idea
 This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 모르는 단어를 찾을 수 없고, 기존 음성 AI는 아이 발음을 잘 못 알아듣는 문제" by 외계인 친구 '모야'에게 음성으로 묻고, 발음이 서툴면 되묻기로 단어를 찾아 아이 눈높이 설명을 듣는 것.
@@ -20,7 +21,7 @@ This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 �
 - GitHub
 
 ## Current Stage
-Session 6: OpenSpec `add-word-question-mvp` — 그룹 13(Figma 와이어프레임 전면 적용) 코드까지 완료. 다음은 11.1 랜딩 → 11.2 실기기 데모, 10.5 실제 STT는 확정 후 (상세는 planning/HANDOFF.md)
+Session 7: `add-word-question-mvp`는 archive(기준 스펙 openspec/specs/). 새 change `apply-hifi-design`(완성 피그마 전면 적용, 브랜치 design-v2) 제안 완료 — 다음은 그룹 1(재료 준비). 실제 STT는 확정(~10/22) 후 그룹 12.1 (상세는 planning/HANDOFF.md)
 
 ## Working Rules
 - Read relevant files before suggesting changes.
@@ -33,7 +34,7 @@ Session 6: OpenSpec `add-word-question-mvp` — 그룹 13(Figma 와이어프레�
 - 새 기능을 제안할 때는 "MVP / 베타 / 나중" 중 어디인지 먼저 표시한다.
 - 새 API·라이브러리가 필요하면 이유와 대안을 먼저 말하고 확인받는다.
 - 코드는 바로 실행 가능한 단위로 주고, 수정 시 바뀐 부분과 이유를 짧게 설명한다.
-- 모바일 세로 화면(375px 폭)·터치·마이크 권한 흐름을 기준으로 만들고 검토한다.
+- 모바일 세로 화면·터치·마이크 권한 흐름을 기준으로 만들고 검토한다. 기준 폭 402px(앱 틀 최대 402px): 402px에서 피그마와 일치(위 상태바 62px를 뺀 402×812 비교, 위치 ±1px), 375·390px에서는 가로 넘침·잘림 없음. 피그마의 상태바·홈 인디케이터는 만들지 않는다.
 - 시연 안정성 우선: 음성 인식 실패·네트워크 오류 시 폴백(텍스트 입력, 예시 단어)을 항상 고려한다.
 - 링크·파일·노션 페이지를 못 읽었으면 추측하지 말고 못 읽었다고 말한다.
 - API 사양·요금처럼 바뀔 수 있는 정보는 검색해서 확인한다.
@@ -43,25 +44,27 @@ Session 6: OpenSpec `add-word-question-mvp` — 그룹 13(Figma 와이어프레�
 
 ## Moya Response Rules
 - 말투: TBD (예: 호기심 많고 다정한 반말, 짧은 문장)
-- 설명 형식: 아이 눈높이의 한두 문장 정의. 예문은 단어 데이터에만 두고 화면에는 보여주지 않는다(와이어프레임 기준).
+- 설명 형식: 아이 눈높이의 한두 문장 정의. 카드(카드 획득·카드 상세)에는 예문도 보여준다. 설명·예문·힌트는 모두 src/data 검수 데이터에서만 가져온다.
 - 아이에게 부적절한 단어(욕설·성적·폭력적 표현 등)는 설명하지 않고 "엄마·아빠한테 물어보자"로 안내한다.
-- 음성 녹음·개인정보는 최소로 수집하고, 무엇을 저장·전송하는지는 보호자 화면(/parent)에 둔다.
+- 음성 녹음·개인정보는 최소로 수집하고, 무엇에 쓰는지는 음성 수집 동의(1-4)·약관·설정에서 알린다. '녹음 듣기'는 숨기고 인식된 글자만 보여준다.
 
 ## Hackathon Focus
 - 심사에서 보여줄 핵심 장면(아이가 엉성하게 물어도 모야가 맞춰주는 순간)이 잘 드러나는 쪽을 우선한다.
 - 발표·피칭 자료는 '서툰 발음 되묻기'(엉성하게 물어도 후보를 찾아 되묻는 장면)를 중심으로 한다.
-- 맥락 질문(상황 버튼)은 와이어프레임에서 빠졌고, 로직(`orderByContext`)만 남겨 두었다.
+- 맥락 질문 "어디서 들었어?"(2-5)를 되살려 `orderByContext`로 같은 거리 후보 순서를 정한다.
 
 ## Boundaries
 Do not add:
 - payment (부모 구독은 베타 단계에서)
-- complex authentication (MVP는 로그인 없이 시작)
+- 서버 계정·외부 로그인 연동(카카오 등)·메일 발송 없음. 가입·로그인·보호자 비밀번호 화면은 이 기기(localStorage)에 저장하는 mock (실제 연동은 베타)
 - real-time collaboration
 - large file upload
 - 아이 음성 원본 저장 (인식된 텍스트만 저장)
-- 해커톤에서 음성인식 외의 외부 API. 음성 출력은 브라우저 내장 speechSynthesis를 쓴다. 사전 API·LLM 실시간 설명·LLM 재순위는 베타 (MVP 후보 순서는 발음 거리 순, 같으면 데이터 순). 연동은 mock으로 흐름을 먼저 확인한 뒤 실제 API로 교체한다.
+- ④ 베타 화면(4-1~4-6: 복습·주간 리포트·구독). 베타 표시 항목은 보이기만 하고 눌러도 동작하지 않는다.
+- 해커톤에서 음성인식 외의 외부 API. 음성 출력은 브라우저 내장 speechSynthesis를 쓴다. 사전 API·LLM 실시간 설명·LLM 재순위는 베타 (MVP 후보 순서는 보호자가 알려 준 단어 → 발음 거리 → 들은 곳 → 데이터 순). 연동은 mock으로 흐름을 먼저 확인한 뒤 실제 API로 교체한다.
 
 ## References
+- 진행 중인 change: openspec/changes/apply-hifi-design/ (화면 목록·버튼 이동표·주소 표는 design.md). 기준 스펙: openspec/specs/
 - Follow docs/PRD.md for scope.
 - Follow docs/DESIGN.md for UI direction.
 - Follow docs/ARCHITECTURE.md for project structure.

@@ -1,7 +1,7 @@
-# 모야 인수인계 (2026-10-04 기준, 그룹 13 완료 시점)
+# 모야 인수인계 (2026-10-09 기준, apply-hifi-design 제안 직후)
 
 > 이 문서를 읽는 AI에게: 이 프로젝트를 이어받아 구현을 계속한다.
-> 먼저 이 문서 → `CLAUDE.md` → `openspec/changes/add-word-question-mvp/tasks.md`(그룹 11) → `design.md` "Figma 와이어프레임 전면 적용 (2차)"·Open Questions 순으로 읽고,
+> 먼저 이 문서 → `CLAUDE.md` → `planning/prompts/design-v2-2026-10-09.md`(A: 결정·비교 기준, B: 피그마 노드 지도) → `openspec/changes/apply-hifi-design/` 의 tasks.md·design.md 순으로 읽고,
 > 아래 "8. 시작 절차"대로 상태를 확인한 뒤 사용자에게 짧게 보고하고 작업을 시작한다.
 
 ---
@@ -11,68 +11,63 @@
 | 항목 | 내용 |
 |---|---|
 | 서비스 | 모야 — 만 5~8세 아이가 "○○이 뭐야?"라고 물으면, 서툰 발음도 되물어 단어를 찾고 아이 눈높이로 설명하는 모바일 웹 (2026 4호선톤 출품 MVP) |
-| 저장소 | `github.com/seeunnyy/moya`, 브랜치 `main` / 로컬: `C:\Users\arong\moya` (Windows) |
+| 저장소 | `github.com/seeunnyy/moya` / 로컬: `C:\Users\arong\moya` (Windows). **작업 브랜치 `design-v2`** (main은 옛 와이어프레임 구조) |
 | 스택 | Next.js 16.3.8 (App Router), React 19.2.8, TypeScript, Tailwind CSS 4. 추가 의존성 없음 |
-| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 81개 통과 (그룹 13 시점) |
-| 작업 방식 | OpenSpec spec-driven. 진행 중인 change는 `add-word-question-mvp` 하나 |
-| 진행률 | 그룹 1~9, 12, 13, 10.1~10.4 완료 (47/50). 남은 것: 11.1~11.2, 10.5(보류) |
-| 다음 할 일 | **11.1 랜딩(S0)** → 11.2 실기기 데모 |
+| 테스트 | Node 내장 러너 `npm test` (`node --test "tests/**/*.test.ts"`). 81개 통과 (옛 그룹 13 시점) |
+| 작업 방식 | OpenSpec spec-driven. 이전 change `add-word-question-mvp`는 2026-10-09 archive(기준 스펙 `openspec/specs/` 7개). **진행 중 change는 `apply-hifi-design`** |
+| 디자인 기준 | 완성 피그마 `U3GaTLJGAbLj5qgTTJiodv` '디자인' 페이지(`180:5325`), 64장, 프레임 402×874 |
+| 진행률 | apply-hifi-design 제안·문서 교체 완료, 구현 0/13 그룹 |
+| 다음 할 일 | **그룹 1 재료 준비** (토큰·글꼴·에셋·mock 데이터·앱 틀). 프롬프트는 design-v2 문서 C의 "프롬프트 2" |
 
-미커밋 변경: 없음 (그룹 13 코드·문서 커밋 직후 기준). `git status`로 다시 확인할 것.
-
-> 코드와 문서 모두 Figma 와이어프레임 구조다. 그룹 13 구현 중 정한 세부는 design.md Open Questions "작업 13.2~13.10 구현 중 정한 부분"에 있다.
+> 코드는 아직 옛 회색 와이어프레임 구조다(§4). 새 화면·주소·상태는 apply-hifi-design design.md의 "화면 목록", "버튼 → 이동할 화면", "화면 ↔ 주소·상태" 표를 따른다.
 
 ---
 
-## 2. 그룹 13에서 확정된 결정 (다시 묻지 말 것)
+## 2. 확정된 결정 (다시 묻지 말 것)
 
-상세는 `design.md` "Figma 와이어프레임 전면 적용 (2차)", 화면별 구성은 `03_UX_UI_SPEC.md` §1, 값은 §5.
+기준 문서 `planning/prompts/design-v2-2026-10-09.md` A가 우선한다. 옛 와이어프레임 시기의 결정(되묻기 화면 S12, 맥락 질문 제거, 저장 버튼, 예문 숨김, 390px, 줄 간격 토큰 등)은 **더 이상 유효하지 않다.** 대체 내역은 apply-hifi-design design.md "옛 결정 중 이 change로 대체되는 것".
 
-- **기준**: Figma 와이어프레임 Section 1(https://www.figma.com/design/rJZjG6ik2Q2ffj1BiK20U8/?node-id=1271-481)과 화면 구성·버튼·이동·스타일을 똑같이. 이동 기준 ① Figma 연결 ② Manyfast '새 플로우 1' ③ design.md. 화면마다 Figma MCP `get_design_context`로 값을 읽는다(그 전에 `skill://figma/figma-design-to-code/SKILL.md`를 읽어야 함).
-- **되묻기 화면(S12)**: 인식 성공 시 항상 거친다. **결과에 맞는 버튼 하나만** 보인다(후보 2~3 [후보 단어 고르기] / 1 "단어 확인 질문 보기" / 0 "물어볼 단어 안내 보기"). 후보 0개면 "혹시 이 말이야?" 영역 숨김. 미리보기 카드 폭은 1/3로 고정.
-- **맥락 질문 제거**: `context` 단계·상황 버튼·`ContextPicker`·`heardContext.ts`를 없앤다. `orderByContext`와 그 테스트는 남긴다(화면에서 안 씀). `WordCard.heardContext` 타입은 데이터 호환용으로 남긴다.
-- **텍스트·예시 입력은 마이크를 못 쓸 때만**(권한 거부·마이크 없음·미지원·http) 음성 녹음 화면의 [녹음 시작] 아래에 보인다. 평소엔 숨김.
-- **[아니에요]·[여기 없어요]는 한 번 다시 말하기**: 첫 번째 → 음성 녹음, 두 번째 → 물어볼 단어 안내 (기존 retry 규칙).
-- **후보 카드 선택(S4)**: 카드 자체를 누르면 확정. [들어보기]는 소리만. 눈에 보이는 고르기 버튼 없음. 후보 단어는 **20 Bold**(Figma 값).
-- **음성 녹음(S1)**: 듣는 중·생각 중은 같은 화면에서 버튼 글자만 [녹음 시작] → [그만하기] → "생각 중…"(비활성). [녹음 시작]에서 권한 미확인이면 /app/mic. 홈 [모야한테 물어보기]는 바로 /app/ask.
-- **화면 글자는 Figma 문구뿐**. 모야 대사는 sr-only aria-live + 자동 음성.
-- **저장 결과는 버튼 글자로만**: 단어 카드 "저장했어!"/"다시 저장하기", 물어볼 단어 "적어 뒀어!"/"다시 저장하기". [또 물어보기]·예문·들은 상황은 화면에서 뺀다.
-- **영어 표기**: `WordEntry.english?` 추가, mock 10개 채움, 없으면 숨김. 카드 상세는 `wordEntryId`로 데이터에서 찾는다(저장 형식은 그대로).
-- **목록**: "학습 상태" Select + 칩 [전체][새 단어][복습 중][완료] 같은 값 공유. 모든 카드 "새 단어".
-- **저장·전송 안내는 /parent로만**. /parent는 Figma 헤더("<" → 홈) + 안내.
-- **계획 확인 1~4 (기본값 확정)**: ① 후보 단어 20 Bold ② Figma에 없는 화면 헤더 이름: 부적절 단어 "부적절 단어 안내 화면", /parent "보호자 화면", 카드 상세 "단어 카드 화면" ③ 줄 간격 토큰 고정(아래 표) ④ 비교는 새 패키지 없이 headless Chrome 스크린샷 + 나란히 붙인 HTML 스크린샷, 위치는 DOM 좌표 vs Figma 메타데이터.
-- **줄 간격 토큰** (Noto Sans KR 기본 줄 간격이 Inter보다 커서 Figma 높이로 고정. PM이 Figma 글꼴을 바꿀 때 Figma에도 같은 px를 넣는다):
+PM 확정 (A-2):
+1. **보호자 가입·로그인·카카오·비밀번호** (1-0, 1-2, 1-5, 1-5a, 5-1, 5-1a, 5-1b, 5-6): 화면은 피그마와 똑같이, 동작은 이 기기(localStorage)에만 저장하는 가짜 가입 [MVP]. 카카오 연동·메일 발송·서버 계정은 [베타].
+2. **녹음 듣기·음성 기록 삭제·목소리 활용 동의** (1-4, 5-3, 5-4, 5-7, 5-8): 화면은 두되 '녹음 듣기'는 숨기고 인식된 글자만. 아이 음성 원본 저장 안 함. 원본 저장은 [나중].
+3. **"어디서 들었어?"(2-5) 맥락 질문 되살리기** [MVP]. `orderByContext` 다시 연결.
+4. **카드에 예문 보여주기** (2-10, 3-2) [MVP]. 예문은 `src/data` 검수 데이터에서만.
+5. **별·미션·로켓** (헤더 미션 별 3칸·별 개수, 2-0, 2-13, 2-14, 3-5) [MVP]. 이 기기에 저장.
+6. **보호자가 단어 알려주기** (5-3, 5-3a) [MVP]. 검수된 단어만, 연결은 이 기기에 저장, 다음에 같은 말이 들리면 후보 맨 앞. `src/lib/pronunciation`은 순수 함수 유지.
+7. **④ 베타 8장(4-1~4-6) 제외** [베타]. 베타 표시 항목은 보이기만 한다.
 
-| 토큰 | 크기 | 줄 간격 |
-|---|---|---|
-| `text-word` | 28px | 34px |
-| `text-title` | 20px | 24px |
-| `text-body` | 16px | 19px |
-| `text-button` | 14px | 17px |
-| `text-caption` | 12px | 15px |
-| `text-label` | 11px | 13px |
+화면·비교 기준 (A-3):
+- 기준 폭 402px(앱 틀 최대 402). 402px에서 피그마와 일치, 375·390px에서는 넘침·잘림 없음.
+- 상태바(위 62px)·홈 인디케이터는 만들지 않음. 하단 탭바 아래 여백(46px)은 유지(실기기는 safe-area).
+- 1-7 마이크 권한 팝업은 진짜 브라우저 권한 창.
+- 비교: 피그마 프레임에서 위 62px를 뺀 402×812 vs 브라우저 402×812. 숫자는 피그마 그대로, 위치 ±1px, 글자 렌더링 차이는 표로 보고.
+- 피그마 프로토타입의 2.5초/1.5초 자동 넘김은 mock STT일 때만 흉내 낸다.
 
-- **스타일 기타**: Noto Sans KR(next/font/google, Geist 제거), 다크 모드 제거, 앱 틀 최대 390px 가운데, 버튼 보이는 크기 Figma 그대로 + `::before`로 누르는 영역 48px, "<"는 글자 없이 aria-label("이전 화면"/"홈으로").
-- **askFlow 변경안**: `review` 추가, `openConfirm`·`openChoose`·`openUnknown`·`showRetryGuide`·`back`(각 상태의 `from`) 추가, `context`·`pickContext`·`micDenied`·`stopListening` 제거. 04 §4 다이어그램 참고.
+OpenSpec 정리 (2026-10-09 PM 확인):
+- `add-word-question-mvp`의 11.1 랜딩 → 새 1-1(그룹 9), 11.2 실기기 데모 → 그룹 12, 10.5 실제 STT → 그룹 12.1(보류 유지)로 이관하고 archive.
+- 새 change는 `openspec/specs/` 기준 델타(ADDED/MODIFIED/REMOVED)로 쓴다.
+
+**잠정 결정 T1~T15** (PM 확인 전 기본값, apply-hifi-design design.md): 내가 말한 소리 TTS, 아이 화면 베타 연결 표시만, 2-7 후보 없으면 폴백, 부적절 안내·폴백 유지, 5-7 삭제 범위, 5-4a 문구, 5-1 × → 3-4, 철회 후 재동의 → 5-4, E-2 재시도 후 이동, 같은 단어 재획득, 빈 지구 사전, 5-3 입력 안내, 입력 오류 문구, 1-4 선택 동의 문구, 없는 카드 id. 바뀌면 `/opsx:update apply-hifi-design`.
 
 ### 반드시 지킬 것 (CLAUDE.md 요약)
 
-- 답변은 한국어, 결론 먼저. 파일 수정 전에 계획을 먼저 말한다(그룹 13은 계획 확인 완료).
-- **새 의존성·새 API는 이유와 대안을 말하고 사용자 확인을 받은 뒤에만.** 픽셀 비교 도구도 설치 전에 묻는다.
+- 답변은 한국어, 결론 먼저. 파일 수정 전에 계획을 먼저 말한다.
+- **새 의존성·새 API는 이유와 대안을 말하고 사용자 확인을 받은 뒤에만.** 글꼴 파일(NanumSquareRound)·픽셀 비교 도구도 넣기 전에 묻는다.
 - 해커톤 외부 API는 음성인식(STT) 하나뿐. 음성 출력은 브라우저 `speechSynthesis`.
-- 아이에게 보여주는 설명은 `src/data`의 단어 데이터만. 아이 음성 원본은 저장하지 않는다.
-- `src/lib/pronunciation`·`storage`·`services`는 그룹 13에서 건드리지 않는다.
+- 아이에게 보여주는 설명·예문·힌트는 `src/data`의 단어 데이터만. 아이 음성 원본은 저장하지 않는다.
+- `get_design_context` 전에 `figma-design-to-code` 스킬을 읽는다. 피그마 에셋 URL은 7일 임시라 받는 즉시 `public/`에 저장하고 코드에 남기지 않는다. 페이지 노드(180:5325) 전체 `get_metadata`는 너무 크니 섹션·프레임 노드로 나눠 읽는다.
+- 피그마에 없는 상태가 필요하면 만들기 전에 묻는다.
 - Next 16은 학습 데이터와 다를 수 있다. 코드 작성 전 `node_modules/next/dist/docs/`의 관련 문서를 확인한다 (`AGENTS.md`).
 
 ### 사용자와 정한 진행 리듬
 
-1. `/opsx:apply add-word-question-mvp` 로 진행하되, 사용자가 범위를 정해 준다.
+1. `/opsx:apply apply-hifi-design`으로 진행하되, 사용자가 범위(그룹)를 정해 준다. 한 세션에 한 그룹.
 2. 그룹이 끝나고 `npm test`·`npm run lint`·`npm run build`가 통과하면 **묻지 말고 커밋**한 뒤, 다음 그룹 시작 전에 멈추고 리포트한다.
-3. 리포트에는 반드시: **"tasks.md(또는 Figma)와 다르게 한 부분"**, **"문서에 없어서 내가 정한 부분"**, 바뀐 파일. 그룹 13은 화면별 결과표(일치 / 폰트 차이 / 그 밖의 차이)와 줄 간격 토큰 표도.
-4. 구현 중 정한 잠정 해석은 `design.md` Open Questions에 기록한다.
-5. 문서 커밋과 코드 커밋은 분리한다. 메시지 형식: `feat: … (작업 x.y~x.z)`, `docs(openspec): …`
-6. 빌드할 때는 묻지 않고 localhost:3000 개발 서버를 끄고 `npm run build` 후 개발 서버를 다시 켜 둔다(서버가 떠 있는 채로 빌드하면 개발 서버가 깨진다). **단, 사용자가 "개발 서버는 켜지 마"라고 하면 다시 켜지 않는다.** 메모리 부족으로 개발 서버가 종료된 적이 있다(2026-10-04).
-7. 브라우저 확인에 띄운 headless Chrome·임시 서버(`next start -p 3123` 등)는 끝나면 바로 정리한다.
+3. 리포트에는 반드시: **"피그마·문서와 다르게 한 부분"**, **"문서에 없어서 내가 정한 부분"**, 바뀐 파일. 화면 그룹은 화면별 결과표(일치 / 글자 렌더링 차이 / 그 밖의 차이).
+4. 구현 중 정한 잠정 해석은 apply-hifi-design design.md에 기록한다.
+5. 문서 커밋과 코드 커밋은 분리한다. 메시지 형식: `feat: … (작업 x.y~x.z)`, `docs(openspec): …`, `docs: …`
+6. 빌드할 때는 묻지 않고 localhost:3000 개발 서버를 끄고 `npm run build` 후 개발 서버를 다시 켜 둔다. **단, 사용자가 "개발 서버는 켜지 마"라고 하면 다시 켜지 않는다.**
+7. 브라우저 확인에 띄운 headless Chrome·임시 서버는 끝나면 바로 정리한다.
 
 ---
 
@@ -81,18 +76,20 @@
 | 파일 | 내용 | 언제 보나 |
 |---|---|---|
 | `CLAUDE.md` | 프로젝트 규칙, 경계(Boundaries) | 항상 |
-| `openspec/changes/add-word-question-mvp/tasks.md` | 구현 체크리스트. **그룹 13** | 작업 시작 전 |
-| `openspec/changes/add-word-question-mvp/design.md` | 결정과 이유. **"Figma 와이어프레임 전면 적용 (2차)"**, Open Questions | 결정이 애매할 때 |
-| `openspec/changes/add-word-question-mvp/specs/*/spec.md` | 7개 capability의 요구사항·시나리오 | 동작을 확인할 때 |
-| `planning/md-design/03_UX_UI_SPEC.md` | **화면별 구성·이동(§1), 컴포넌트(§2), Visual 값·토큰(§5)** | 화면 만들 때 |
-| `planning/md-design/04_TECHNICAL_DESIGN.md` | 라우트, 데이터 모델(§3), **상태 기계(§4)**, 저장(§5) | 구조 확인 |
-| `planning/md-design/05_DELIVERY_PLAN.md` | 일정(§1), **수동 QA(§4, QA-01~14)**, 데모 시나리오(§5) | QA·일정 |
-| `planning/md-design/02_REQUIREMENTS_SPEC.md` | FR/NFR ID, 인수조건, 추적표 | 요구사항 ID 확인 |
-| `docs/PRD.md`, `docs/DESIGN.md`, `docs/ARCHITECTURE.md` | 요약판 | 참고 |
+| `planning/prompts/design-v2-2026-10-09.md` | **PM 결정(A-2), 비교 기준(A-3), 피그마 노드 지도(B), 그룹별 프롬프트(C)** | 작업 시작 전 |
+| `openspec/changes/apply-hifi-design/tasks.md` | 구현 체크리스트 (그룹 1~13) | 작업 시작 전 |
+| `openspec/changes/apply-hifi-design/design.md` | **화면 목록 64장, 버튼 → 이동할 화면, 화면 ↔ 주소·상태**, 결정, 잠정 결정 T1~T15 | 화면·이동 만들 때 |
+| `openspec/changes/apply-hifi-design/specs/*/spec.md` | 11개 capability 델타 (수정 7, 신규 4) | 동작 확인 |
+| `openspec/specs/*/spec.md` | archive된 기준 스펙(옛 구조) | 델타 비교 |
+| `planning/md-design/03_UX_UI_SPEC.md` | 화면·컴포넌트·값 — **옛 구조. 각 화면 그룹에서 고친다** | 화면 만들 때 |
+| `planning/md-design/04_TECHNICAL_DESIGN.md` | 라우트·데이터 모델·상태 기계·저장 — **옛 구조. 그룹 3에서 고친다** | 구조 확인 |
+| `planning/md-design/05_DELIVERY_PLAN.md` | 일정, 수동 QA, 데모 시나리오 — **그룹 12에서 고친다** | QA·일정 |
+| `planning/md-design/02_REQUIREMENTS_SPEC.md` | FR/NFR, 추적표 — **그룹 3에서 고친다** | 요구사항 ID |
+| `docs/PRD.md`, `docs/DESIGN.md`, `docs/ARCHITECTURE.md` | 요약판 (DESIGN은 새 기준으로 갱신됨) | 참고 |
 
 ---
 
-## 4. 지금 코드 (그룹 13 후)
+## 4. 지금 코드 (옛 와이어프레임 구조, apply-hifi-design 그룹 1 시작 전)
 
 | 파일 | 역할 |
 |---|---|
@@ -122,28 +119,31 @@
 
 ## 5. 남은 작업
 
-| 작업 | 내용 | 메모 |
+| 그룹 | 내용 | 메모 |
 |---|---|---|
-| **11.1~11.2** | 랜딩 S0, 실기기 데모 시나리오 통합 확인 | **다음 작업**. 05 §5 |
-| 10.5 | 실제 STT 연동 | **보류**. STT 확정(~10/22) 후 |
+| **1** | 재료 준비: 토큰·글꼴·에셋·mock 데이터·앱 틀 | **다음 작업**. NanumSquareRound 파일은 확인 후 |
+| 2 | 공통 부품 | 개발용 부품 모음 주소로 피그마 비교 |
+| 3 | 이동 설계·상태 기계·저장 | askFlow 재작성, 저장 키 추가, 04·02 문서 |
+| 4~11 | 바로 알아들음 / 헷갈릴 때 / 모르는 단어·못 알아들음 / 오늘의 미션 / 지구 사전·오늘의 단어·내 정보 / 온보딩 / 보호자·설정 / 예외 | 그룹마다 03 문서의 해당 화면 수정 |
+| 12 | 전체 비교 검증·실기기 데모 | 12.1 실제 STT는 **보류**(STT 확정 ~10/22 후) |
+| 13 | 모션 | 범위는 그때 확인 (180:9283) |
 
-검증 방법 메모(13.10에서 사용): Figma 메타데이터(node 좌표)는 `get_metadata`(node 1271:481)로 얻는다. 비교 이미지는 scratchpad 같은 커밋하지 않는 폴더에 둔다. 비교할 때 홈은 카드 3개를 넣은 상태로 본다(0개면 배너가 숨겨져 위치가 달라짐). Chrome 확장이 연결되지 않으면 headless Chrome + Node 내장 WebSocket(CDP)으로 확인할 수 있다(이전 세션에서 사용). 13.10 결과: 화면 10개 주요 요소가 Figma 좌표와 ±1px, 예외는 확인 질문(S3) 힌트 글자 높이로 아래가 4px 밀림(의도). 375px 가로 넘침 없음.
+검증 방법 메모: 피그마 좌표는 프레임 노드 `get_metadata`(y − 62). 비교 이미지는 scratchpad 같은 커밋하지 않는 폴더에. Chrome 확장이 연결되지 않으면 headless Chrome + Node 내장 WebSocket(CDP)으로 402×812 캡처.
 
 ---
 
-## 6. 이후 작업에 걸리는 Open Questions (design.md에 기본값 있음)
+## 6. 이후 작업에 걸리는 Open Questions (옛 change에서 이어짐)
 
 | 질문 | 기본값 |
 |---|---|
-| 모야 말투, 반말·존댓말 통일, 확인 질문 틀 2~3종 | Figma 문구 그대로, 틀 1종 "○○ 말하는 거야? <힌트>!" |
-| [그만하기] 버튼 이름 | 유지, 말투 정할 때 다시 |
+| 모야 말투·문구 | 새 피그마 문구 그대로 |
 | 부적절 단어 목록·판별 기준 | mock 1개, 정확히 같을 때만 |
 | STT 서비스 | mock 어댑터 |
 | 최대 녹음 시간 | 8초 (실기기에서 조정) |
 | 지시어만 있는 질문("이게 뭐야") | "이게"를 단어로 꺼냄 → 물어볼 단어 |
-| 같은 거리 후보 순서 | 데이터 순서 ("가바" → 가방 먼저) |
-| 단어장 정렬·중복 카드 | 최근 저장 순, 중복 제거 없음 |
-| 고지 문구 최종안 | 03 §3 잠정 문구 |
+| 같은 거리 후보 순서 | 들은 곳(2-5) → 데이터 순서 |
+| 지구 사전 정렬·중복 카드 | 최근 순, 같은 단어는 카드 1장(T10) |
+| 고지 문구 최종안 | 피그마 1-4·1-2a 문구 (T14 확인 필요) |
 | 배포 환경 | 미정 (11/5 전 결정) |
 
 ---
@@ -156,18 +156,18 @@
 | 10/16~10/22 | 아이 녹음 테스트, 역규칙 보정 | `src/data/rules.ts`, `config.ts` 값 조정 |
 | ~10/22 | STT 확정 | 10.5 시작 가능 |
 | 10/29 | 검수된 단어 데이터 50~100개, 핵심 화면 UI 전달 | 데이터 교체, 디자인 입히기 |
-| 11/5 | **1차 배포** | 13·11 그룹 완료 필요 |
+| 11/5 | **1차 배포** | apply-hifi-design 그룹 1~12 완료 필요 |
 | 11/6~11/12 | 사용성 테스트 | — |
 | 11/20 | 최종 배포, 발표 | — |
 
-PM 할 일: Figma 글꼴 교체 시 §2의 줄 간격 토큰 px를 Figma에도 넣는다.
+PM 할 일: 잠정 결정 T1~T15 확인, 그룹 1 전에 NanumSquareRound 파일 사용 확인.
 
 ---
 
 ## 8. 시작 절차 (새 세션의 AI가 할 일)
 
-1. 이 문서, `CLAUDE.md`, `tasks.md` 그룹 13, `design.md` "Figma 와이어프레임 전면 적용 (2차)"를 읽는다.
-2. `git status`, `git log --oneline -5`로 커밋 상태를 확인한다.
+1. 이 문서, `CLAUDE.md`, `planning/prompts/design-v2-2026-10-09.md`, apply-hifi-design의 `tasks.md`·`design.md`를 읽는다.
+2. 브랜치가 `design-v2`인지, `git status`, `git log --oneline -5`로 커밋 상태를 확인한다.
 3. `npm test`, `npm run lint`를 실행한다. (`npm run build`는 개발 서버 규칙(§2-6)을 지킨다)
-4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업 = 11.1).
-5. 사용자가 진행을 요청하면 `/opsx:apply add-word-question-mvp`로 11.1부터 시작한다.
+4. 결과를 사용자에게 3줄 이내로 보고한다 (통과 여부, 미커밋 변경, 다음 작업 = 그룹 1).
+5. 사용자가 진행을 요청하면 `/opsx:apply apply-hifi-design`으로 그 그룹을 시작한다.
