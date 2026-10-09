@@ -1,0 +1,20 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="14" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="&#234;&#188;&#172;&#235;&#166;&#172;" clip-path="url(#clip0_0_22)">
+<g id="Vector" filter="url(#filter0_d_0_22)">
+<path d="M1 0L12 12.5L23 0" fill="white" stroke-width="2" stroke-linejoin="round" stroke="#E0DDD7"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_22" x="0.249286" y="-0.660628" width="23.5014" height="18.1606" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.945098 0 0 0 0 0.894118 0 0 0 0 0.784314 0 0 0 1 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_22"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_22" result="shape"/>
+</filter>
+<clipPath id="clip0_0_22">
+<rect width="24" height="14" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -27,6 +27,72 @@
   --color-beta-bg: #ffe3dc; /* 포인트/베타 배경 */
   /* 면/흰색 #ffffff 는 Tailwind 기본 white 를 쓴다 */
 
+  /* 부품 상태 색 (피그마 버튼 상태 보드 180:5582·컴포넌트 보드 180:6258의 값. 변수로 정의되어 있지 않아 이름을 붙임) */
+  --color-brand-hover: #8f78ff; /* 다시 듣기 호버 */
+  --color-brand-pressed: #5a3fe0; /* 다시 듣기 누름 */
+  --color-brand-shadow: #4a35c9; /* 주 버튼 아래 그림자, 칩 누름 글자 */
+  --color-brand-hover-text: #5b45e0; /* 원형 버튼 호버 글자 */
+  --color-lavender-press: #e4ddff; /* 탭 누름 배경 */
+  --color-lavender-shadow: #e4dcff; /* 보조 버튼·글자 타일 그림자 */
+  --color-lavender-hover-shadow: #e9e2ff; /* 칩·원형 버튼 호버 그림자 */
+  --color-lavender-press-shadow: #ded5ff; /* 칩 누름 그림자 */
+  --color-lavender-press-line: #c9bdff; /* 칩·원형 버튼 누름 테두리 */
+  --color-hover-faint: #fbf9ff; /* 칩 호버 배경 */
+  --color-chip-press: #f1edff; /* 칩 누름 배경 */
+  --color-round-hover: #f7f4ff; /* 원형 버튼 호버 배경 */
+  --color-beige-shadow: #faedd1; /* 흰 카드·칩·키패드 아래 그림자 */
+  --color-muted-fill: #f3f1ec; /* 비활성 칩·보조 버튼 배경 */
+  --color-muted-line: #e8e4dc; /* 비활성 칩·보조 버튼 테두리 */
+  --color-disabled-fill: #d6d1e2; /* 비활성 주 버튼·다시 듣기 */
+  --color-disabled-shadow: #c3bcd3; /* 비활성 주 버튼 그림자 */
+  --color-dashed-disabled: #e2dfea; /* 비활성 점선 버튼 테두리 */
+  --color-tab-disabled: #d3d0dc; /* 비활성 탭 글자 */
+  --color-bubble-line: #e0ddd7; /* 말풍선·나이 칩 테두리 */
+  --color-bubble-shadow: #f1e4c8; /* 말풍선 그림자 */
+  --color-tile-shadow: #eadfc6; /* 단어 카드 타일 그림자 */
+  --color-sheet-handle: #d9d3e6; /* 바텀 시트 손잡이 */
+  --color-dim: rgba(36, 31, 72, 0.45); /* 시트·확인 창 뒤 어두운 배경 */
+  --color-kakao: #fee500; /* 카카오 버튼 */
+  --color-kakao-text: #191919;
+
+  /* 카드 색 (단어 카드 타일 배경·카드 머리띠. 단어·상태마다 다름) */
+  --color-tint-yellow: #fff2c7;
+  --color-tint-lime: #e6f4c4;
+  --color-tint-green: #e3f5d6;
+  --color-tint-lavender: #eeeaff;
+  --color-tint-sky: #e3f0ff;
+
+  /* 그림자 (피그마 값 그대로) */
+  --shadow-tabbar: 0 -1px 0 0 rgba(185, 169, 138, 0.12), 0 -6px 24px 0 rgba(91, 69, 200, 0.1);
+  --shadow-card: 0 6px 0 0 var(--color-beige-shadow);
+  --shadow-key: 0 4px 0 0 var(--color-beige-shadow);
+  --shadow-letter: 0 5px 0 0 var(--color-lavender-shadow);
+  --shadow-group: 0 2px 10px 0 rgba(36, 31, 72, 0.05);
+  --shadow-round-hover: 0 4px 0 0 var(--color-lavender-hover-shadow);
+  --shadow-round-press: 0 1px 0 0 var(--color-lavender-press-shadow);
+  --drop-shadow-primary-sm: 0 4px 0 var(--color-brand-shadow);
+  --drop-shadow-danger-pressed: 0 1px 0 var(--color-beta-text);
+  --drop-shadow-primary: 0 5px 0 var(--color-brand-shadow);
+  --drop-shadow-primary-pressed: 0 1px 0 var(--color-brand-shadow);
+  --drop-shadow-disabled: 0 5px 0 var(--color-disabled-shadow);
+  --drop-shadow-secondary: 0 5px 0 var(--color-lavender-shadow);
+  --drop-shadow-secondary-pressed: 0 1px 0 var(--color-lavender-shadow);
+  --drop-shadow-danger: 0 5px 0 var(--color-beta-text);
+  --drop-shadow-beige: 0 4px 0 var(--color-beige-shadow);
+  --drop-shadow-beige-sm: 0 3px 0 var(--color-beige-shadow);
+  --drop-shadow-beige-lg: 0 5px 0 var(--color-beige-shadow);
+  --drop-shadow-beige-pressed: 0 1px 0 var(--color-beige-shadow);
+  --drop-shadow-hover: 0 3px 0 var(--color-lavender-hover-shadow);
+  --drop-shadow-press: 0 1px 0 var(--color-lavender-press-shadow);
+  --drop-shadow-lavender: 0 4px 0 var(--color-line-lavender);
+  --drop-shadow-lavender-lg: 0 5px 0 var(--color-line-lavender);
+  --drop-shadow-bubble: 0 4px 0 var(--color-bubble-shadow);
+  --drop-shadow-tile: 0 5px 0 var(--color-tile-shadow);
+  --drop-shadow-speaker: 0 3px 4px rgba(106, 79, 243, 0.28);
+  --drop-shadow-speaker-hover: 0 4px 5px rgba(106, 79, 243, 0.36);
+  --drop-shadow-speaker-pressed: 0 1px 1.5px rgba(106, 79, 243, 0.3);
+  --shadow-speaker-playing: 0 3px 8px 0 rgba(106, 79, 243, 0.28), 0 0 0 0 rgba(160, 141, 255, 0.45);
+
   /* ↓ 옛 회색 와이어프레임 토큰. 지금 화면들이 쓰고 있어 남겨 두고, 화면을 교체하는 그룹에서 지운다 */
 
   --color-ink: #1f2937; /* 기본 글자, primary 버튼 배경, secondary 테두리 */
