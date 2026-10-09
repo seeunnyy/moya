@@ -4,12 +4,12 @@
 
 ## 1. 재료 준비: 토큰·글꼴·에셋·mock 데이터·앱 틀
 
-- [ ] 1.1 피그마 변수(`get_variable_defs`)를 `globals.css` `@theme` 토큰(색·모서리·그림자·글자 크기/줄 간격)으로 옮기고, 토큰 표를 리포트에 남긴다. 옛 회색 토큰은 쓰는 곳이 없어지는 그룹에서 지운다. `npm run build` 통과로 확인
-- [ ] 1.2 Jua를 next/font/google로 넣고, NanumSquareRound는 무료 폰트 파일 출처·라이선스·파일 목록을 먼저 보여 확인받은 뒤 next/font/local로 넣는다. Noto Sans KR 유지, Inter 안 씀. 글꼴 세 개가 적용된 시험 화면 스크린샷으로 확인
-- [ ] 1.3 모야 표정 모음(180:6098), 단어 그림, 아이콘을 `download_assets`로 받아 `public/`에 저장하고(캐릭터는 원본 해상도), 파일 이름 규칙과 목록을 표로 남긴다. `grep`으로 코드·문서에 피그마 임시 URL이 없는지 확인
-- [ ] 1.4 `HeardContext`를 home/school/tv/book/outside로, `WordEntry`에 `image`·`bubbleExplanation`을 더하고(design.md "단어 데이터 필드"), `words.mock.ts`를 피그마 시연 단어와 피그마 문구 그대로 바꾼다(검수 전 표시 유지). 데이터 테스트와 `npx tsc --noEmit` 통과로 확인
-- [ ] 1.5 STT mock 순서와 예시 버튼 문장을 피그마 시연 흐름(바로 알아들음·헷갈릴 때·모르는 단어·못 알아들음·미션 세 번째 카드)에 맞추고, 각 문장이 기대한 후보·분기로 가는지 pronunciation 테스트로 확인(안 되면 Risks대로 인식 후보 여러 개로 맞춤)
-- [ ] 1.6 앱 틀을 최대 402px·크림 배경·하단 safe-area로 바꾸고, 402·390·375px에서 지금 화면의 가로 넘침이 없는지 확인
+- [x] 1.1 피그마 변수(`get_variable_defs`)를 `globals.css` `@theme` 토큰(색·모서리·그림자·글자 크기/줄 간격)으로 옮기고, 토큰 표를 리포트에 남긴다. 옛 회색 토큰은 쓰는 곳이 없어지는 그룹에서 지운다. `npm run build` 통과로 확인
+- [x] 1.2 Jua를 next/font/google로 넣고, NanumSquareRound는 무료 폰트 파일 출처·라이선스·파일 목록을 먼저 보여 확인받은 뒤 next/font/local로 넣는다. Noto Sans KR 유지, Inter 안 씀. 글꼴 세 개가 적용된 시험 화면 스크린샷으로 확인
+- [x] 1.3 모야 표정 모음(180:6098), 단어 그림, 아이콘을 `download_assets`로 받아 `public/`에 저장하고(캐릭터는 원본 해상도), 파일 이름 규칙과 목록을 표로 남긴다. `grep`으로 코드·문서에 피그마 임시 URL이 없는지 확인
+- [x] 1.4 `HeardContext`를 home/school/tv/book/outside로, `WordEntry`에 `image`·`bubbleExplanation`을 더하고(design.md "단어 데이터 필드"), `words.mock.ts`를 피그마 시연 단어와 피그마 문구 그대로 바꾼다(검수 전 표시 유지). 데이터 테스트와 `npx tsc --noEmit` 통과로 확인
+- [x] 1.5 STT mock 순서와 예시 버튼 문장을 피그마 시연 흐름(바로 알아들음·헷갈릴 때·모르는 단어·못 알아들음·미션 세 번째 카드)에 맞추고, 각 문장이 기대한 후보·분기로 가는지 pronunciation 테스트로 확인(안 되면 Risks대로 인식 후보 여러 개로 맞춤)
+- [x] 1.6 앱 틀을 최대 402px·크림 배경·하단 safe-area로 바꾸고, 402·390·375px에서 지금 화면의 가로 넘침이 없는지 확인
 
 ## 2. 공통 부품
 
