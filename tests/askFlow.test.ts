@@ -6,220 +6,196 @@ import {
   type AskAction,
   type AskState,
 } from "../src/lib/askFlow.ts";
-import { LEGACY_WORDS as MOCK_WORDS } from "./fixtures/legacyWords.ts";
+import { MOCK_WORDS } from "../src/data/words.mock.ts";
 import { BLOCKED_WORDS } from "../src/data/blocklist.ts";
+import { MOCK_STT_TURNS } from "../src/data/examplePrompts.ts";
 
-const reduce = createAskReducer(MOCK_WORDS);
-const run = (actions: AskAction[], from: AskState = initialAskState) =>
-  actions.reduce(reduce, from);
-const ask = (text: string): AskAction => ({ type: "recognized", transcripts: [text] });
+const reduce = createAskReducer(MOCK_WORDS, { blockedWords: BLOCKED_WORDS });
+const run = (actions: AskAction[], from: AskState = initialAskState, r = reduce) => actions.reduce(r, from);
+const heard = (...transcripts: string[]): AskAction => ({ type: "recognized", transcripts });
+const listenThenHear = (...transcripts: string[]): AskAction[] => [
+  { type: "startListening" },
+  { type: "stopListening" },
+  heard(...transcripts),
+];
+const words = (s: AskState) =>
+  "candidates" in s ? s.candidates.map((c) => c.entry.word) : [];
 
-test("마이크 경로: idle → listening → thinking → review", () => {
+test("바로 알아들음: 2-1 → 2-2 → 2-3 → 2-4 저금통 → [맞아!] 2-9 → 카드 획득 2-10", () => {
   const listening = run([{ type: "startListening" }]);
   assert.equal(listening.phase, "listening");
-  const thinking = run([{ type: "recordingDone" }], listening);
+  const thinking = run([{ type: "stopListening" }], listening);
   assert.equal(thinking.phase, "thinking");
-  const review = run([ask("공룡이 뭐야")], thinking);
-  assert.equal(review.phase, "review");
-  if (review.phase !== "review") return;
-  assert.equal(review.spokenAs, "공룡");
-  assert.equal(review.result.kind, "confirm");
-});
-
-test("인식 실패 → sttFailed, \"<\"는 음성 녹음 대기로", () => {
-  const s = run([{ type: "startListening" }, { type: "recordingDone" }, { type: "sttFailed" }]);
-  assert.equal(s.phase, "sttFailed");
-  assert.deepEqual(run([{ type: "back" }], s), initialAskState);
-});
-
-test("질문 형태가 아니거나 비어 있으면 sttFailed (QA-06)", () => {
-  assert.equal(run([ask("공룡")]).phase, "sttFailed");
-  assert.equal(run([ask("")]).phase, "sttFailed");
-});
-
-test("링크 \"다시 말하기\" → E2, [다시 녹음하기] → idle", () => {
-  const guide = run([{ type: "showRetryGuide" }]);
-  assert.equal(guide.phase, "sttFailed");
-  assert.deepEqual(run([{ type: "retry" }], guide), initialAskState);
-  assert.deepEqual(run([{ type: "back" }], guide), initialAskState);
-  // 듣는 중에는 링크가 동작하지 않는다
-  const listening = run([{ type: "startListening" }]);
-  assert.equal(run([{ type: "showRetryGuide" }], listening), listening);
-});
-
-test("QA-01: 공룡 → review → 단어 확인 질문 → [네, 맞아요] → explaining → saved", () => {
-  const confirm = run([ask("공룡이 뭐야?"), { type: "openConfirm" }]);
+  const confirm = run([heard("저금통이 뭐야?")], thinking);
   assert.equal(confirm.phase, "confirm");
-  if (confirm.phase !== "confirm") return;
-  assert.equal(confirm.candidate.entry.word, "공룡");
+  assert.equal(words(confirm)[0], "저금통");
 
-  const explaining = run([{ type: "confirmYes" }], confirm);
-  assert.equal(explaining.phase, "explaining");
-  const saved = run([{ type: "cardSaved" }], explaining);
-  assert.equal(saved.phase, "saved");
-  if (saved.phase !== "saved") return;
-  assert.equal(saved.entry.word, "공룡");
-  assert.equal(saved.spokenAs, "공룡");
-});
-
-test("QA-02: 가바 → review(choose) → 후보 카드 선택 → 데이터 순(가방 먼저) → 카드 누름", () => {
-  const review = run([ask("가바가 뭐야?")]);
-  assert.equal(review.phase === "review" && review.result.kind, "choose");
-  const choose = run([{ type: "openChoose" }], review);
-  assert.equal(choose.phase, "choose");
-  if (choose.phase !== "choose") return;
-  assert.equal(choose.candidates[0].entry.word, "가방");
-
-  const explaining = run([{ type: "pickCandidate", entryId: "gabal-1" }], choose);
+  const explaining = run([{ type: "answerYes" }], confirm);
   assert.equal(explaining.phase, "explaining");
   if (explaining.phase !== "explaining") return;
-  assert.equal(explaining.entry.word, "가발");
-  assert.equal(explaining.spokenAs, "가바");
-});
+  assert.equal(explaining.entry.word, "저금통");
+  assert.equal(explaining.spokenAs, "저금통");
 
-test("되묻기 결과에 맞지 않는 버튼 동작은 무시한다", () => {
-  const review = run([ask("가바가 뭐야?")]);
-  assert.equal(run([{ type: "openConfirm" }], review), review);
-  assert.equal(run([{ type: "openUnknown" }], review), review);
-  const one = run([ask("두박이 뭐야?")]);
-  assert.equal(run([{ type: "openChoose" }], one), one);
-});
-
-test("QA-03: 두박·대풍·저그통 → 되묻기 후보 1개 → 원래 단어 확인 질문", () => {
-  for (const [text, word] of [
-    ["두박이 뭐야?", "수박"],
-    ["대풍이 뭐야?", "태풍"],
-    ["저그통이 뭐야?", "저금통"],
-  ]) {
-    const s = run([ask(text), { type: "openConfirm" }]);
-    assert.equal(s.phase, "confirm", text);
-    if (s.phase === "confirm") assert.equal(s.candidate.entry.word, word);
-  }
-});
-
-test("QA-04: 뿌잉뿌잉 → review(unknown) → 물어볼 단어 안내, spokenAs 뿌잉뿌잉", () => {
-  const review = run([ask("뿌잉뿌잉이 뭐야?")]);
-  assert.equal(review.phase === "review" && review.result.kind, "unknown");
-  const s = run([{ type: "openUnknown" }], review);
-  assert.equal(s.phase, "unknown");
-  if (s.phase !== "unknown") return;
-  assert.equal(s.spokenAs, "뿌잉뿌잉");
-  assert.equal(s.pendingSaved, false);
-  const saved = run([{ type: "pendingSaved" }], s);
-  assert.equal(saved.phase === "unknown" && saved.pendingSaved, true);
-});
-
-test("QA-05: [아니에요] 두 번 → 첫 번째는 idle, 두 번째는 unknown", () => {
-  const first = run([ask("공룡이 뭐야?"), { type: "openConfirm" }, { type: "reject" }]);
-  assert.deepEqual(first, { phase: "idle", retryCount: 1 });
-
-  const second = run([ask("공룡이 뭐야?"), { type: "openConfirm" }, { type: "reject" }], first);
-  assert.equal(second.phase, "unknown");
-  if (second.phase !== "unknown") return;
-  assert.equal(second.spokenAs, "공룡");
-  assert.equal(second.retryCount, 1);
-});
-
-test("[여기 없어요] 두 번 → unknown", () => {
-  const first = run([ask("가바가 뭐야?"), { type: "openChoose" }, { type: "reject" }]);
-  assert.deepEqual(first, { phase: "idle", retryCount: 1 });
-  const second = run([ask("가바가 뭐야?"), { type: "openChoose" }, { type: "reject" }], first);
-  assert.equal(second.phase, "unknown");
-});
-
-test("back: 단어 카드 → 확인 질문 → 되묻기 → 음성 녹음", () => {
-  const card = run([ask("두박이 뭐야?"), { type: "openConfirm" }, { type: "confirmYes" }]);
-  assert.equal(card.phase, "explaining");
-  const confirm = run([{ type: "back" }], card);
-  assert.equal(confirm.phase, "confirm");
-  const review = run([{ type: "back" }], confirm);
-  assert.equal(review.phase, "review");
-  assert.deepEqual(run([{ type: "back" }], review), initialAskState);
-  // 음성 녹음 화면에는 이전 화면이 없다 (화면이 홈으로 보낸다)
-  assert.equal(run([{ type: "back" }]), initialAskState);
-});
-
-test("back: 후보 카드 선택 → 되묻기, 다시 말하기 횟수는 그대로", () => {
-  const first = run([ask("공룡이 뭐야?"), { type: "openConfirm" }, { type: "reject" }]);
-  const choose = run([ask("가바가 뭐야?"), { type: "openChoose" }], first);
-  const review = run([{ type: "back" }], choose);
-  assert.equal(review.phase, "review");
-  assert.equal(review.retryCount, 1);
-});
-
-test("restart → 다시 말하기 횟수도 처음부터", () => {
-  const s = run([ask("공룡이 뭐야?"), { type: "openConfirm" }, { type: "reject" }, { type: "restart" }]);
-  assert.deepEqual(s, initialAskState);
-});
-
-test("[다시 녹음하기](retry) → idle, 다시 말하기 횟수는 그대로", () => {
-  const failed = run([ask("공룡이 뭐야?"), { type: "openConfirm" }, { type: "reject" }, ask("공룡")]);
-  assert.equal(failed.phase, "sttFailed");
-  assert.deepEqual(run([{ type: "retry" }], failed), { phase: "idle", retryCount: 1 });
-  const confirm = run([ask("공룡이 뭐야?"), { type: "openConfirm" }]);
-  assert.equal(run([{ type: "retry" }], confirm), confirm);
-});
-
-test("지금 상태에 맞지 않는 동작은 무시한다", () => {
-  assert.equal(run([{ type: "confirmYes" }]), initialAskState);
-  assert.equal(run([{ type: "cardSaved" }]), initialAskState);
-  assert.equal(run([{ type: "recordingDone" }]), initialAskState);
-  const review = run([ask("공룡이 뭐야?")]);
-  assert.equal(run([ask("가바가 뭐야?")], review), review);
-  const listening = run([{ type: "startListening" }]);
-  assert.equal(run([ask("공룡이 뭐야?")], listening), listening);
-  const choose = run([ask("가바가 뭐야?"), { type: "openChoose" }]);
-  assert.equal(run([{ type: "pickCandidate", entryId: "없음" }], choose), choose);
-});
-
-test("05 §5 데모: 예시 질문만으로 수박·가방 설명, 뿌잉뿌잉 물어볼 단어 (QA-11)", () => {
-  // 옛 시연 문장 (픽스처 단어용). 새 흐름 테스트는 그룹 3에서 다시 쓴다
-  const [dubak, gaba, ppuing] = ["두박이 뭐야?", "가바가 뭐야?", "뿌잉뿌잉이 뭐야?"];
-
-  const suBak = run([ask(dubak), { type: "openConfirm" }, { type: "confirmYes" }]);
-  assert.equal(suBak.phase === "explaining" && suBak.entry.word, "수박");
-
-  const choose = run([ask(gaba), { type: "openChoose" }]);
-  assert.equal(choose.phase, "choose");
-  if (choose.phase !== "choose") return;
-  const picked = run([{ type: "pickCandidate", entryId: choose.candidates[0].entry.id }], choose);
-  assert.equal(picked.phase === "explaining" && picked.entry.word, "가방");
-
-  assert.equal(run([ask(ppuing), { type: "openUnknown" }]).phase, "unknown");
-});
-
-test("부적절 단어 → blocked, 되묻기·저장 단계로 가지 않는다 (content-safety)", () => {
-  const guarded = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
-  const s = guarded(initialAskState, ask(`${BLOCKED_WORDS[0]}이 뭐야?`));
-  assert.equal(s.phase, "blocked");
-  assert.ok(!("spokenAs" in s), "단어를 상태에 남기지 않는다");
-  // 어떤 저장 트리거(explaining·unknown)로도 넘어가지 않는다
-  const actions: AskAction[] = [
-    { type: "openConfirm" },
-    { type: "openChoose" },
-    { type: "openUnknown" },
-    { type: "confirmYes" },
-    { type: "reject" },
-    { type: "cardSaved" },
-    { type: "pendingSaved" },
-  ];
-  for (const action of actions) {
-    assert.equal(guarded(s, action).phase, "blocked");
-  }
-  assert.equal(guarded(s, { type: "retry" }).phase, "idle");
-  assert.equal(guarded(s, { type: "back" }).phase, "idle");
-});
-
-test("인식 후보 중 하나라도 부적절 단어면 blocked", () => {
-  const guarded = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
-  const s = guarded(initialAskState, {
-    type: "recognized",
-    transcripts: ["공룡이 뭐야", `${BLOCKED_WORDS[0]}이 뭐야`],
+  const collected = run(
+    [{ type: "cardCollected", cardId: "c1", isNew: true, missionCompleted: false }],
+    explaining,
+  );
+  assert.deepEqual(collected, {
+    phase: "collected",
+    entry: explaining.entry,
+    spokenAs: "저금통",
+    cardId: "c1",
+    isNew: true,
+    missionCompleted: false,
+    missionSuccessOpen: false,
   });
-  assert.equal(s.phase, "blocked");
 });
 
-test("목록에 없는 단어는 평소처럼 되묻기로 간다", () => {
-  const guarded = createAskReducer(MOCK_WORDS, BLOCKED_WORDS);
-  assert.equal(guarded(initialAskState, ask("공룡이 뭐야?")).phase, "review");
+test("헷갈릴 때: mock 첫 묶음 → 2-4 저금통 → [아니야] 2-5 → [잘 모르겠어] 2-6 저금통·저울·조금 → 저울 → 2-9", () => {
+  const confirm = run(listenThenHear(...MOCK_STT_TURNS[0]));
+  assert.equal(confirm.phase, "confirm");
+  assert.deepEqual(words(confirm), ["저금통", "저울", "조금"]);
+
+  const context = run([{ type: "answerNo" }], confirm);
+  assert.equal(context.phase, "context");
+  const choose = run([{ type: "pickContext", context: null }], context);
+  assert.equal(choose.phase, "choose");
+  // 2-4에서 아니라고 한 저금통도 남는다
+  assert.deepEqual(words(choose), ["저금통", "저울", "조금"]);
+  assert.equal(choose.phase === "choose" && choose.heardContext, undefined);
+
+  const explaining = run([{ type: "pickCandidate", entryId: "jeoul-1" }], choose);
+  assert.equal(explaining.phase, "explaining");
+  if (explaining.phase !== "explaining") return;
+  assert.equal(explaining.entry.word, "저울");
+  // '내가 말한 소리'는 저울과 맞은 인식 후보
+  assert.equal(explaining.spokenAs, "저욷");
+});
+
+test("헷갈릴 때: 들은 곳을 고르면 같은 거리 후보 중 그 태그가 앞에 오고, 카드에 들은 곳이 남는다", () => {
+  const choose = run([...listenThenHear(...MOCK_STT_TURNS[0]), { type: "answerNo" }, { type: "pickContext", context: "outside" }]);
+  assert.equal(choose.phase, "choose");
+  assert.deepEqual(words(choose), ["저울", "저금통", "조금"]); // 저울만 밖에서 태그
+  const explaining = run([{ type: "pickCandidate", entryId: "jogeum-1" }], choose);
+  assert.equal(explaining.phase === "explaining" && explaining.heardContext, "outside");
+  assert.equal(explaining.phase === "explaining" && explaining.spokenAs, "조굼");
+});
+
+test("다 아니야 → 2-8, 말한 소리는 첫 대상 단어", () => {
+  const unknown = run([
+    ...listenThenHear(...MOCK_STT_TURNS[0]),
+    { type: "answerNo" },
+    { type: "pickContext", context: "book" },
+    { type: "noneOfThese" },
+  ]);
+  assert.deepEqual(unknown, { phase: "unknown", spokenAs: "저굼통" });
+});
+
+test("모르는 단어: 저구멍 → 2-8, [알았어!] → 2-1, [다른 말 물어볼래] → 2-2", () => {
+  const unknown = run(listenThenHear(...MOCK_STT_TURNS[1]));
+  assert.deepEqual(unknown, { phase: "unknown", spokenAs: "저구멍" });
+  assert.deepEqual(run([{ type: "goHome" }], unknown), initialAskState);
+  assert.equal(run([{ type: "startListening" }], unknown).phase, "listening");
+});
+
+test("못 알아들음: 빈 결과·질문 형태 아님 → 2-7, 마이크 → 2-2", () => {
+  for (const transcripts of [MOCK_STT_TURNS[2], ["저금통"], [""]]) {
+    const retry = run(listenThenHear(...transcripts));
+    assert.deepEqual(retry, { phase: "retry", fallback: false }, JSON.stringify(transcripts));
+    assert.equal(run([{ type: "startListening" }], retry).phase, "listening");
+  }
+  const failed = run([{ type: "startListening" }, { type: "stopListening" }, { type: "recognitionFailed", reason: "empty" }]);
+  assert.deepEqual(failed, { phase: "retry", fallback: false });
+});
+
+test("2-7 [글자 카드로 고를래] → 고를 후보가 없어 폴백, 글자 입력으로 같은 흐름", () => {
+  const fallback = run([...listenThenHear(), { type: "chooseByLetters" }]);
+  assert.deepEqual(fallback, { phase: "retry", fallback: true });
+  assert.equal(run([heard("우싼이 뭐야?")], fallback).phase, "confirm");
+});
+
+test("네트워크 오류 → E-1, [다시 해 볼래] → 2-2, [처음으로] → 2-1", () => {
+  const error = run([{ type: "startListening" }, { type: "stopListening" }, { type: "recognitionFailed", reason: "network" }]);
+  assert.deepEqual(error, { phase: "networkError" });
+  assert.equal(run([{ type: "startListening" }], error).phase, "listening");
+  assert.deepEqual(run([{ type: "goHome" }], error), initialAskState);
+});
+
+test("마이크 불가 → E-2, 폴백 글자 입력으로 진행, 권한을 다시 받으면 2-2", () => {
+  const off = run([{ type: "micUnavailable" }]);
+  assert.deepEqual(off, { phase: "micOff" });
+  const confirm = run([heard("저굼통이 뭐야?")], off);
+  assert.equal(confirm.phase, "confirm");
+  assert.equal(words(confirm)[0], "저금통");
+  assert.equal(run([{ type: "startListening" }], off).phase, "listening");
+});
+
+test("2-1 폴백 예시 버튼은 생각 중과 같은 흐름", () => {
+  assert.equal(run([heard("우싼이 뭐야?")]).phase, "confirm");
+});
+
+test("부적절 단어 → blocked (후보 찾기 없음), 마이크로 다시", () => {
+  const blocked = run(listenThenHear(`${BLOCKED_WORDS[0]}이 뭐야?`, "저굼통이 뭐야?"));
+  assert.deepEqual(blocked, { phase: "blocked" });
+  assert.equal(run([{ type: "startListening" }], blocked).phase, "listening");
+});
+
+test("미션 세 번째 카드: 우싼 → 2-4 우산 → 2-9 → 2-13 → 1.5초 뒤 2-14", () => {
+  const collected = run([
+    ...listenThenHear(...MOCK_STT_TURNS[3]),
+    { type: "answerYes" },
+    { type: "cardCollected", cardId: "c3", isNew: true, missionCompleted: true },
+  ]);
+  assert.equal(collected.phase, "collected");
+  if (collected.phase !== "collected") return;
+  assert.equal(collected.entry.word, "우산");
+  assert.equal(collected.spokenAs, "우싼");
+  assert.equal(collected.missionCompleted, true);
+  assert.equal(collected.missionSuccessOpen, false);
+  const success = run([{ type: "openMissionSuccess" }], collected);
+  assert.equal(success.phase === "collected" && success.missionSuccessOpen, true);
+});
+
+test("이미 있던 단어는 미션 성공으로 보지 않고, 미션 창도 열리지 않는다", () => {
+  const collected = run([
+    heard("우싼이 뭐야?"),
+    { type: "answerYes" },
+    { type: "cardCollected", cardId: "old", isNew: false, missionCompleted: true },
+  ]);
+  assert.equal(collected.phase === "collected" && collected.missionCompleted, false);
+  assert.equal(run([{ type: "openMissionSuccess" }], collected), collected);
+});
+
+test("보호자가 알려 준 단어가 2-4 첫 후보", () => {
+  const taughtReduce = createAskReducer(MOCK_WORDS, { taught: { 저구멍: "jeogeumtong-1" } });
+  const confirm = run(listenThenHear("저구멍이 뭐야?"), initialAskState, taughtReduce);
+  assert.equal(confirm.phase, "confirm");
+  assert.equal(words(confirm)[0], "저금통");
+});
+
+test("그 상태에 맞지 않는 액션은 무시한다", () => {
+  const idle = initialAskState;
+  for (const action of [
+    { type: "stopListening" },
+    { type: "answerYes" },
+    { type: "answerNo" },
+    { type: "pickContext", context: "home" },
+    { type: "pickCandidate", entryId: "jeoul-1" },
+    { type: "noneOfThese" },
+    { type: "chooseByLetters" },
+    { type: "recognitionFailed", reason: "network" },
+    { type: "cardCollected", cardId: null, isNew: true, missionCompleted: false },
+    { type: "openMissionSuccess" },
+  ] satisfies AskAction[]) {
+    assert.equal(run([action], idle), idle, action.type);
+  }
+  // 듣는 중·생각 중에는 마이크를 다시 눌러도 새로 시작하지 않는다
+  const thinking = run([{ type: "startListening" }, { type: "stopListening" }]);
+  assert.equal(run([{ type: "startListening" }], thinking), thinking);
+  // 2-4에서는 들은 말이 다시 들어와도 무시
+  const confirm = run([heard("저굼통이 뭐야?")]);
+  assert.equal(run([heard("우싼이 뭐야?")], confirm), confirm);
+  // 2-6에 없는 카드
+  const choose = run([{ type: "answerNo" }, { type: "pickContext", context: null }], confirm);
+  assert.equal(run([{ type: "pickCandidate", entryId: "usan-1" }], choose), choose);
 });

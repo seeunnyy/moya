@@ -1,153 +1,125 @@
-// /app/ask 묻기 흐름 상태 기계 (04 §4). 단어 데이터를 받아 reducer를 만드는 순수 함수다.
-// 저장(카드·물어볼 단어)은 reducer 밖에서 하고, 결과만 cardSaved / pendingSaved로 알려 준다.
+// /app 아이 묻기 흐름 상태 기계 (design.md "askFlow를 새 흐름으로", 04 §4). 단어 데이터를 받아 reducer를 만드는 순수 함수다.
+// 저장(카드·물어볼 단어)과 별·미션 계산은 reducer 밖(progress.ts)에서 하고, 결과만 cardCollected로 알려 준다.
 //
-// idle(S1) → listening → thinking ─┬→ review(S12) ─┬ openChoose  → choose(S4) ─카드→ explaining(S5) → saved
-//    │                             │               ├ openConfirm → confirm(S3) ─[네, 맞아요]→ explaining
-//    │                             │               └ openUnknown → unknown(S6)
-//    │                             ├→ sttFailed(E2)  (인식 실패·추출 실패)
-//    │                             └→ blocked(E3)    (부적절 단어, 후보 찾기·저장 없음)
-//    └ 링크 "다시 말하기"(showRetryGuide) → sttFailed ─[다시 녹음하기](retry)→ idle (retryCount 유지)
-// back: 각 상태가 직전 상태(from)를 들고 있어 "<"로 돌아간다.
-// 마이크를 쓸 수 없는 것(E1)은 상태가 아니라 화면 쪽 표시다.
+// idle(2-1) → listening(2-2/2-11) → thinking(2-3/2-12) ─┬→ confirm(2-4) ─[맞아!]→ explaining(2-9) ─[알았어!]→ collected(2-10/2-13)
+//                                                       │      └[아니야]→ context(2-5) ─들은 곳/잘 모르겠어→ choose(2-6) ─카드→ explaining
+//                                                       │                                                     └[다 아니야]→ unknown(2-8)
+//                                                       ├→ unknown(2-8)    후보 0개
+//                                                       ├→ retry(2-7)      인식 결과가 비었거나 대상 단어를 꺼내지 못함
+//                                                       ├→ blocked         부적절 단어 (후보 찾기·저장 없음)
+//                                                       └→ networkError(E-1)  어댑터가 한 번 다시 시도한 뒤에도 네트워크 오류
+// micOff(E-2): 마이크를 쓸 수 없음. 마이크가 있는 화면 어디서든 갈 수 있다.
+// 아이 묻기 화면에는 "<"가 없다. 새로고침·goHome이면 2-1로.
 
-import type { Candidate, CandidateResult, WordEntry } from "../types/index.ts";
-import { MAX_RETRY } from "./config.ts";
-import { inferWord } from "./pronunciation/candidates.ts";
+import type { Candidate, HeardContext, WordEntry } from "../types/index.ts";
+import { findCandidates, orderByContext, type TaughtLinks } from "./pronunciation/candidates.ts";
 import { extractTargets } from "./pronunciation/extract.ts";
 
-// 음성 녹음 화면(S1)의 상태. 듣는 중·생각 중은 같은 화면에서 버튼 글자만 바뀐다.
-export type AskingState = {
-  phase: "idle" | "listening" | "thinking";
-  retryCount: number;
-};
-
 export type AskState =
-  | AskingState
-  | { phase: "sttFailed"; retryCount: number; from: AskState }
-  | { phase: "blocked"; retryCount: number; from: AskState } // 부적절 단어. 단어는 기록하지 않는다
-  | { phase: "review"; retryCount: number; spokenAs: string; result: CandidateResult; from: AskState }
-  | { phase: "confirm"; retryCount: number; spokenAs: string; candidate: Candidate; from: AskState }
-  | { phase: "choose"; retryCount: number; spokenAs: string; candidates: Candidate[]; from: AskState }
-  | { phase: "unknown"; retryCount: number; spokenAs: string; pendingSaved: boolean; from: AskState }
+  | { phase: "idle" } // 2-1
+  | { phase: "listening" } // 2-2 · 2-11
+  | { phase: "thinking" } // 2-3 · 2-12
+  | { phase: "confirm"; spokenAs: string; candidates: Candidate[] } // 2-4: candidates[0]을 묻는다
+  | { phase: "context"; spokenAs: string; candidates: Candidate[] } // 2-5
+  | { phase: "choose"; spokenAs: string; candidates: Candidate[]; heardContext?: HeardContext } // 2-6
+  | { phase: "retry"; fallback: boolean } // 2-7. fallback: [글자 카드로 고를래]인데 후보가 없어 글자 입력·예시 버튼을 보임
+  | { phase: "unknown"; spokenAs: string } // 2-8 (열릴 때 화면이 물어볼 단어로 저장)
+  | { phase: "explaining"; entry: WordEntry; spokenAs: string; heardContext?: HeardContext } // 2-9
   | {
-      phase: "explaining" | "saved";
-      retryCount: number;
-      spokenAs: string;
+      phase: "collected"; // 2-10 · 2-13
       entry: WordEntry;
-      from: AskState;
-    };
+      spokenAs: string;
+      cardId: string | null; // 저장한(또는 이미 있던) 카드. 저장 실패면 null
+      isNew: boolean; // false면 이미 있던 단어라 별·미션이 늘지 않음 (T10)
+      missionCompleted: boolean; // 이 카드로 오늘의 미션 성공 → 2-13 말풍선, 1.5초 뒤 2-14
+      missionSuccessOpen: boolean; // 2-14 창
+    }
+  | { phase: "blocked" } // 부적절 단어 안내
+  | { phase: "networkError" } // E-1
+  | { phase: "micOff" }; // E-2 (폴백 표시)
 
 export type AskAction =
-  | { type: "startListening" } // [녹음 시작]
-  | { type: "recordingDone" } // [그만하기] 또는 최대 녹음 시간
-  | { type: "sttFailed" }
-  | { type: "showRetryGuide" } // 링크 "다시 말하기"
-  | { type: "retry" } // E2·E3 [다시 녹음하기]. restart와 달리 retryCount를 유지한다
-  | { type: "recognized"; transcripts: string[] } // 인식 후보 또는 텍스트 입력 1개
-  | { type: "openConfirm" } // 되묻기: "단어 확인 질문 보기"
-  | { type: "openChoose" } // 되묻기: [후보 단어 고르기]
-  | { type: "openUnknown" } // 되묻기: "물어볼 단어 안내 보기"
-  | { type: "confirmYes" } // [네, 맞아요]
-  | { type: "reject" } // [아니에요] / [여기 없어요]
-  | { type: "pickCandidate"; entryId: string } // 후보 카드 누름
-  | { type: "cardSaved" }
-  | { type: "pendingSaved" }
-  | { type: "back" } // 헤더 "<" (이전 화면)
-  | { type: "restart" }; // 새 질문 시작
+  | { type: "startListening" } // 마이크 · [다른 말 물어볼래] · [또 물어볼래] · [다시 해 볼래] · 2-0 [지금 물어볼래]
+  | { type: "stopListening" } // 마이크 다시 누름 · 최대 녹음 시간 · mock 2.5초
+  | { type: "recognized"; transcripts: string[] } // 인식 후보(마이크) 또는 글자 입력·예시 버튼 1개(폴백)
+  | { type: "recognitionFailed"; reason: "network" | "empty" }
+  | { type: "answerYes" } // 2-4 [맞아!]
+  | { type: "answerNo" } // 2-4 [아니야]
+  | { type: "pickContext"; context: HeardContext | null } // 2-5 들은 곳 · [잘 모르겠어](null)
+  | { type: "pickCandidate"; entryId: string } // 2-6 카드
+  | { type: "noneOfThese" } // 2-6 [다 아니야]
+  | { type: "chooseByLetters" } // 2-7 [글자 카드로 고를래]
+  | {
+      type: "cardCollected"; // 2-9 [알았어!] → 화면이 저장·별 계산 후 알림
+      cardId: string | null;
+      isNew: boolean;
+      missionCompleted: boolean;
+    }
+  | { type: "openMissionSuccess" } // 2-13 1.5초 뒤 2-14
+  | { type: "micUnavailable" } // 권한 거부·마이크 없음·미지원·http
+  | { type: "goHome" }; // 2-8 [알았어!] · E-1 [처음으로] · 탭 · 2-14 닫힘 뒤 등
 
-export const initialAskState: AskState = { phase: "idle", retryCount: 0 };
+export const initialAskState: AskState = { phase: "idle" };
 
-// "<"로 돌아갈 음성 녹음 화면. 듣는 중·생각 중이 아니라 대기 상태로 돌아간다.
-const askingScreen = (retryCount: number): AskState => ({ phase: "idle", retryCount });
+const IDLE: AskState = initialAskState;
 
-// blockedWords: 대상 단어가 이 목록에 있으면 후보 찾기·설명·저장을 하지 않는다 (content-safety).
-export function createAskReducer(entries: WordEntry[], blockedWords: string[] = []) {
+export type AskReducerOptions = {
+  blockedWords?: string[]; // 대상 단어가 여기에 있으면 후보 찾기·설명·저장을 하지 않는다 (content-safety)
+  taught?: TaughtLinks; // 보호자가 알려 준 연결 (저장소에서 읽어 넘김). 바뀌면 reducer를 다시 만든다
+};
+
+// 폴백 입력을 받는 상태: 2-1(마이크 아래), 2-7 폴백, E-2
+const ACCEPTS_TYPED = new Set<AskState["phase"]>(["idle", "retry", "micOff"]);
+
+export function createAskReducer(entries: WordEntry[], options: AskReducerOptions = {}) {
+  const { blockedWords = [], taught = {} } = options;
+
+  function afterRecognition(transcripts: string[]): AskState {
+    const targets = extractTargets(transcripts);
+    if (targets.length === 0) return { phase: "retry", fallback: false };
+    // 인식 후보 중 하나라도 부적절 단어면 막는다.
+    if (targets.some((t) => blockedWords.includes(t))) return { phase: "blocked" };
+    const candidates = findCandidates(targets, entries, taught);
+    if (candidates.length === 0) return { phase: "unknown", spokenAs: targets[0] };
+    return { phase: "confirm", spokenAs: targets[0], candidates };
+  }
+
   return function askReducer(state: AskState, action: AskAction): AskState {
-    const { retryCount } = state;
-
     switch (action.type) {
       case "startListening":
-        return state.phase === "idle" ? { phase: "listening", retryCount } : state;
+        return state.phase === "listening" || state.phase === "thinking" ? state : { phase: "listening" };
 
-      case "recordingDone":
-        return state.phase === "listening" ? { phase: "thinking", retryCount } : state;
+      case "stopListening":
+        return state.phase === "listening" ? { phase: "thinking" } : state;
 
-      case "sttFailed":
-        return state.phase === "thinking"
-          ? { phase: "sttFailed", retryCount, from: askingScreen(retryCount) }
+      case "recognized":
+        return state.phase === "thinking" || ACCEPTS_TYPED.has(state.phase)
+          ? afterRecognition(action.transcripts)
           : state;
 
-      case "showRetryGuide":
-        return state.phase === "idle" ? { phase: "sttFailed", retryCount, from: state } : state;
+      case "recognitionFailed":
+        if (state.phase !== "thinking") return state;
+        return action.reason === "network" ? { phase: "networkError" } : { phase: "retry", fallback: false };
 
-      case "retry":
-        return state.phase === "sttFailed" || state.phase === "blocked"
-          ? askingScreen(retryCount)
-          : state;
-
-      case "recognized": {
-        // 마이크 경로(thinking) 또는 폴백 텍스트·예시 입력(idle)
-        if (state.phase !== "idle" && state.phase !== "thinking") return state;
-        const from = askingScreen(retryCount);
-        const targets = extractTargets(action.transcripts);
-        if (targets.length === 0) return { phase: "sttFailed", retryCount, from };
-        // 인식 후보 중 하나라도 부적절 단어면 막는다.
-        if (targets.some((t) => blockedWords.includes(t))) {
-          return { phase: "blocked", retryCount, from };
-        }
-        const spokenAs = targets[0];
-        return { phase: "review", retryCount, spokenAs, result: inferWord(targets, entries), from };
+      case "answerYes": {
+        if (state.phase !== "confirm") return state;
+        const first = state.candidates[0];
+        return { phase: "explaining", entry: first.entry, spokenAs: first.spokenAs ?? state.spokenAs };
       }
 
-      case "openConfirm":
-        return state.phase === "review" && state.result.kind === "confirm"
-          ? {
-              phase: "confirm",
-              retryCount,
-              spokenAs: state.spokenAs,
-              candidate: state.result.candidate,
-              from: state,
-            }
-          : state;
-
-      case "openChoose":
-        return state.phase === "review" && state.result.kind === "choose"
-          ? {
-              phase: "choose",
-              retryCount,
-              spokenAs: state.spokenAs,
-              candidates: state.result.candidates,
-              from: state,
-            }
-          : state;
-
-      case "openUnknown":
-        return state.phase === "review" && state.result.kind === "unknown"
-          ? { phase: "unknown", retryCount, spokenAs: state.spokenAs, pendingSaved: false, from: state }
-          : state;
-
-      case "confirmYes":
+      case "answerNo":
         return state.phase === "confirm"
-          ? {
-              phase: "explaining",
-              retryCount,
-              spokenAs: state.spokenAs,
-              entry: state.candidate.entry,
-              from: state,
-            }
+          ? { phase: "context", spokenAs: state.spokenAs, candidates: state.candidates }
           : state;
 
-      case "reject": {
-        if (state.phase !== "confirm" && state.phase !== "choose") return state;
-        if (retryCount < MAX_RETRY) return askingScreen(retryCount + 1);
+      case "pickContext":
+        if (state.phase !== "context") return state;
         return {
-          phase: "unknown",
-          retryCount,
+          phase: "choose",
           spokenAs: state.spokenAs,
-          pendingSaved: false,
-          from: state,
+          candidates: orderByContext(state.candidates, action.context ?? undefined),
+          ...(action.context ? { heardContext: action.context } : {}),
         };
-      }
 
       case "pickCandidate": {
         if (state.phase !== "choose") return state;
@@ -155,24 +127,41 @@ export function createAskReducer(entries: WordEntry[], blockedWords: string[] = 
         if (!picked) return state;
         return {
           phase: "explaining",
-          retryCount,
-          spokenAs: state.spokenAs,
           entry: picked.entry,
-          from: state,
+          spokenAs: picked.spokenAs ?? state.spokenAs,
+          ...(state.heardContext ? { heardContext: state.heardContext } : {}),
         };
       }
 
-      case "cardSaved":
-        return state.phase === "explaining" ? { ...state, phase: "saved" } : state;
+      case "noneOfThese":
+        return state.phase === "choose" ? { phase: "unknown", spokenAs: state.spokenAs } : state;
 
-      case "pendingSaved":
-        return state.phase === "unknown" ? { ...state, pendingSaved: true } : state;
+      case "chooseByLetters":
+        // 2-7은 인식에 실패해서 오므로 고를 후보가 없다 → 글자 입력·예시 버튼 폴백 (잠정 T3)
+        return state.phase === "retry" ? { phase: "retry", fallback: true } : state;
 
-      case "back":
-        return "from" in state ? state.from : state;
+      case "cardCollected":
+        if (state.phase !== "explaining") return state;
+        return {
+          phase: "collected",
+          entry: state.entry,
+          spokenAs: state.spokenAs,
+          cardId: action.cardId,
+          isNew: action.isNew,
+          missionCompleted: action.isNew && action.missionCompleted,
+          missionSuccessOpen: false,
+        };
 
-      case "restart":
-        return initialAskState;
+      case "openMissionSuccess":
+        return state.phase === "collected" && state.missionCompleted
+          ? { ...state, missionSuccessOpen: true }
+          : state;
+
+      case "micUnavailable":
+        return { phase: "micOff" };
+
+      case "goHome":
+        return IDLE;
     }
   };
 }

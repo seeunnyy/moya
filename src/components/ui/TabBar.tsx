@@ -29,7 +29,7 @@ export function TabBar({
   disabled = [],
 }: {
   selected: TabKey;
-  hrefs?: Partial<Record<TabKey, string>>; // 주소는 그룹 3 라우트 뼈대에서 확정 (기본값은 design.md 표)
+  hrefs?: Partial<Record<TabKey, string>>; // 기본값은 design.md "화면 ↔ 주소" 표 (그룹 3에서 확정)
   disabled?: TabKey[];
 }) {
   return (

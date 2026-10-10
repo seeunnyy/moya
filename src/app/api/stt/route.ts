@@ -2,7 +2,12 @@
 // 요청: multipart/form-data, 필드 "audio". 응답: { transcripts: string[], provider: string }.
 // 오디오는 변환에만 쓰고 저장하지 않는다 (NFR-04). 실패하면 4xx/5xx → 화면은 E2로 간다.
 
-import { selectSttAdapter } from "@/lib/services/stt";
+import { selectSttAdapter, sttProviderName } from "@/lib/services/stt";
+
+// GET /api/stt — 지금 쓰는 STT 이름만 알려 준다 ({ provider: "mock" }). 키·설정은 보내지 않는다.
+export function GET() {
+  return Response.json({ provider: sttProviderName() });
+}
 
 // 최대 녹음 시간(config MAX_RECORDING_MS) 안의 짧은 질문이면 넉넉한 크기
 const MAX_AUDIO_BYTES = 5 * 1024 * 1024;

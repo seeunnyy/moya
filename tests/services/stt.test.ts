@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createMockSttAdapter } from "../../src/lib/services/stt/mock.ts";
-import { selectSttAdapter } from "../../src/lib/services/stt/index.ts";
+import { selectSttAdapter, sttProviderName } from "../../src/lib/services/stt/index.ts";
 import { MOCK_STT_TURNS } from "../../src/data/examplePrompts.ts";
 
 const audio = new Blob(["fake audio"], { type: "audio/webm" });
@@ -34,4 +34,9 @@ test("STT_PROVIDER가 없거나 mock이면 mock, 같은 서버에서는 순서�
 
 test("아직 없는 STT 서비스를 고르면 오류 (라우트가 실패 응답 → 다시 말해줄래)", () => {
   assert.throws(() => selectSttAdapter({ STT_PROVIDER: "something" }));
+});
+
+test("STT 이름 (GET /api/stt): 없으면 mock, 키는 돌려주지 않는다", () => {
+  assert.equal(sttProviderName({}), "mock");
+  assert.equal(sttProviderName({ STT_PROVIDER: "real", STT_API_KEY: "secret" }), "real");
 });

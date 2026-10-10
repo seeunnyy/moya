@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useReducer, useRef, useState, useSyncExternalStore } from "react";
 import { BLOCKED_WORDS } from "@/data/blocklist";
 import { MOCK_WORDS } from "@/data/words.mock";
-import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
+import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow.legacy";
 import { MAX_RECORDING_MS } from "@/lib/config";
 import { speaker } from "@/lib/services/speech";
 import { addCard, addPending } from "@/lib/storage";

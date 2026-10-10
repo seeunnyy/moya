@@ -13,8 +13,13 @@ type Env = Record<string, string | undefined>;
 // 서버 프로세스 하나에 mock 하나. 녹음할 때마다 시연용 인식 후보 묶음을 차례로 돌려준다.
 let mockAdapter: SttAdapter | null = null;
 
+// 지금 쓰는 STT 이름 (GET /api/stt). 화면이 mock일 때만 자동 넘김 시간을 흉내 내려고 묻는다.
+export function sttProviderName(env: Env = process.env): string {
+  return env.STT_PROVIDER || "mock";
+}
+
 export function selectSttAdapter(env: Env = process.env): SttAdapter {
-  const provider = env.STT_PROVIDER || "mock";
+  const provider = sttProviderName(env);
   if (provider === "mock") {
     mockAdapter ??= createMockSttAdapter(MOCK_STT_TURNS);
     return mockAdapter;
