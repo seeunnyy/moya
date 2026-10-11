@@ -162,6 +162,7 @@ export function KidAskScreen() {
 
   const recognizer = useMemo(() => createRecognizer(), []);
   const provider = useRef<string | null>(null);
+  const providerReady = useRef<Promise<void> | null>(null); // STT 종류를 다 물었는지 (화면이 열리자마자 마이크를 눌러도 mock이면 2.5초)
   const recording = useRef<Recording | null>(null);
   const opening = useRef(false); // 마이크 여는 중(권한 창) — 두 번 눌러도 한 번만
   const left = useRef(false); // 화면을 떠났으면 늦게 온 결과를 버린다
@@ -196,7 +197,7 @@ export function KidAskScreen() {
   // mock STT인지 미리 물어 둔다 (mock이면 2.5초 뒤 자동으로 녹음을 끝낸다)
   useEffect(() => {
     let active = true;
-    void recognizer.provider().then((p) => {
+    providerReady.current = recognizer.provider().then((p) => {
       if (active) provider.current = p;
     });
     return () => {
@@ -239,6 +240,10 @@ export function KidAskScreen() {
     }
     opening.current = true;
     const stream = await openMic();
+    if (stream && providerReady.current) {
+      // STT 종류를 아직 모르면 잠깐(최대 1초) 기다린다. 모르면 실제 STT처럼 최대 녹음 시간까지 듣는다
+      await Promise.race([providerReady.current, new Promise((r) => window.setTimeout(r, 1000))]);
+    }
     opening.current = false;
     if (left.current) {
       if (stream) closeMic(stream);

@@ -6,9 +6,6 @@ export const MAX_DISTANCE = 2;
 // 보여줄 최대 후보 수
 export const MAX_CANDIDATES = 3;
 
-// [옛 흐름 전용 — askFlow.legacy.ts] [아니에요] / [여기 없어요] 뒤 다시 말하기 횟수. 새 흐름은 쓰지 않는다
-export const MAX_RETRY = 1;
-
 // 최대 녹음 시간 (ms). [그만하기]를 누르지 않아도 이 시간이 지나면 녹음을 끝낸다 (잠정, 실기기에서 조정)
 export const MAX_RECORDING_MS = 8000;
 

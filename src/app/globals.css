@@ -49,7 +49,6 @@
   --color-tab-disabled: #d3d0dc; /* 비활성 탭 글자 */
   --color-bubble-line: #e0ddd7; /* 말풍선·나이 칩 테두리 */
   --color-bubble-shadow: #f1e4c8; /* 말풍선 그림자 */
-  --color-tile-shadow: #eadfc6; /* 단어 카드 타일 그림자 */
   --color-sheet-handle: #d9d3e6; /* 바텀 시트 손잡이 */
   --color-dim: rgba(36, 31, 72, 0.45); /* 시트·확인 창 뒤 어두운 배경 */
   --color-dim-system: rgba(0, 0, 0, 0.4); /* 1-7 브라우저 마이크 권한 창 뒤 (180:7385) */
@@ -95,40 +94,10 @@
   --drop-shadow-lavender: 0 4px 0 var(--color-line-lavender);
   --drop-shadow-lavender-lg: 0 5px 0 var(--color-line-lavender);
   --drop-shadow-bubble: 0 4px 0 var(--color-bubble-shadow);
-  --drop-shadow-tile: 0 5px 0 var(--color-tile-shadow);
   --drop-shadow-speaker: 0 3px 4px rgba(106, 79, 243, 0.28);
   --drop-shadow-speaker-hover: 0 4px 5px rgba(106, 79, 243, 0.36);
   --drop-shadow-speaker-pressed: 0 1px 1.5px rgba(106, 79, 243, 0.3);
   --shadow-speaker-playing: 0 3px 8px 0 rgba(106, 79, 243, 0.28), 0 0 0 0 rgba(160, 141, 255, 0.45);
-
-  /* ↓ 옛 회색 와이어프레임 토큰. 지금 화면들이 쓰고 있어 남겨 두고, 화면을 교체하는 그룹에서 지운다 */
-
-  --color-ink: #1f2937; /* 기본 글자, primary 버튼 배경, secondary 테두리 */
-  --color-muted: #6b7280; /* 링크 버튼 글자 */
-  --color-placeholder: #9ca3af; /* 이미지 자리 글자, Select "Select…" */
-  --color-line: #d1d5db; /* 이미지 자리 점선, 원형 이미지, 탭 아이콘, Select 테두리 */
-  --color-edge: #e5e7eb; /* 카드 박스 테두리, 칩 테두리, 힌트 막대 */
-  --color-surface: #f9fafb; /* 카드 박스·이미지 자리 배경 */
-  --color-chip: #f3f4f6; /* 칩 기본 배경 */
-  --color-rule: #d0d0d0; /* 헤더 아래·하단 탭 위 테두리 */
-  --color-tabbar: #f5f5f5; /* 하단 탭 배경 */
-
-  --radius-box: 6px; /* 버튼, 카드 박스, 이미지 자리 */
-  --radius-select: 4px; /* Select, 힌트 막대 */
-
-  /* 글자 크기와 줄 간격. Noto Sans KR 기본 줄 간격이 Inter보다 커서 Figma 높이로 고정한다 (design.md W2). */
-  --text-word: 28px;
-  --text-word--line-height: 34px;
-  --text-title: 20px;
-  --text-title--line-height: 24px;
-  --text-body: 16px;
-  --text-body--line-height: 19px;
-  --text-button: 14px;
-  --text-button--line-height: 17px;
-  --text-caption: 12px;
-  --text-caption--line-height: 15px;
-  --text-label: 11px;
-  --text-label--line-height: 13px;
 }
 
 /* 피그마 글자 스타일. 글꼴·크기·굵기·줄 간격을 한 묶음으로 쓴다 (피그마 스타일 이름 → 유틸리티) */
@@ -246,7 +215,7 @@
 body {
   /* 402px 이하 휴대폰은 앱 칸과 같은 크림(당겨서 늘어나는 바깥도 같은 색). 더 넓으면 회색 바깥 */
   background: var(--color-cream);
-  color: var(--color-ink);
+  color: var(--color-text-strong);
   font-family: var(--font-sans);
 }
 
