@@ -8,7 +8,8 @@
 //                                                       ├→ retry(2-7)      인식 결과가 비었거나 대상 단어를 꺼내지 못함
 //                                                       ├→ blocked         부적절 단어 (후보 찾기·저장 없음)
 //                                                       └→ networkError(E-1)  어댑터가 한 번 다시 시도한 뒤에도 네트워크 오류
-// micOff(E-2): 마이크를 쓸 수 없음. 마이크가 있는 화면 어디서든 갈 수 있다.
+// micOff(E-2): 마이크를 쓸 수 없음. noConsent: 보호자가 음성 수집에 동의하지 않았거나 철회함(녹음·전송하지 않음).
+// 둘 다 마이크가 있는 화면 어디서든 갈 수 있다.
 // 아이 묻기 화면에는 "<"가 없다. 새로고침·goHome이면 2-1로.
 
 import type { Candidate, HeardContext, WordEntry } from "../types/index.ts";
@@ -36,7 +37,8 @@ export type AskState =
     }
   | { phase: "blocked" } // 부적절 단어 안내
   | { phase: "networkError" } // E-1
-  | { phase: "micOff" }; // E-2 (폴백 표시)
+  | { phase: "micOff" } // E-2 (폴백 표시)
+  | { phase: "noConsent" }; // 음성 수집 동의 없음 안내 (E-2 모양, PM 확인 2026-10-12)
 
 export type AskAction =
   | { type: "startListening" } // 마이크 · [다른 말 물어볼래] · [또 물어볼래] · [다시 해 볼래] · 2-0 [지금 물어볼래]
@@ -57,6 +59,7 @@ export type AskAction =
     }
   | { type: "openMissionSuccess" } // 2-13 1.5초 뒤 2-14
   | { type: "micUnavailable" } // 권한 거부·마이크 없음·미지원·http
+  | { type: "consentMissing" } // 1-4 필수 동의 없음·5-8 철회
   | { type: "goHome" }; // 2-8 [알았어!] · E-1 [처음으로] · 탭 · 2-14 닫힘 뒤 등
 
 export const initialAskState: AskState = { phase: "idle" };
@@ -68,8 +71,8 @@ export type AskReducerOptions = {
   taught?: TaughtLinks; // 보호자가 알려 준 연결 (저장소에서 읽어 넘김). 바뀌면 reducer를 다시 만든다
 };
 
-// 폴백 입력을 받는 상태: 2-1(마이크 아래), 2-7 폴백, E-2
-const ACCEPTS_TYPED = new Set<AskState["phase"]>(["idle", "retry", "micOff"]);
+// 폴백 입력을 받는 상태: 2-1(마이크 아래), 2-7 폴백, E-2, 동의 없음 안내 (글자는 음성이 아니라 동의 없이 쓸 수 있다)
+const ACCEPTS_TYPED = new Set<AskState["phase"]>(["idle", "retry", "micOff", "noConsent"]);
 
 export function createAskReducer(entries: WordEntry[], options: AskReducerOptions = {}) {
   const { blockedWords = [], taught = {} } = options;
@@ -159,6 +162,9 @@ export function createAskReducer(entries: WordEntry[], options: AskReducerOption
 
       case "micUnavailable":
         return { phase: "micOff" };
+
+      case "consentMissing":
+        return { phase: "noConsent" };
 
       case "goHome":
         return IDLE;

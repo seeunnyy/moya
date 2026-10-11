@@ -93,3 +93,14 @@ test("듣는 중 자동 넘김: mock만 2.5초, 그 밖에는 최대 녹음 시�
   assert.equal(listenLimitMs("real"), MAX_RECORDING_MS);
   assert.equal(listenLimitMs(null), MAX_RECORDING_MS);
 });
+
+test("서버가 504(STT 서비스에 닿지 않음)면 다시 시도하지 않고 연결이 끊겼어요(E-1)", async () => {
+  const { deps, calls } = fakeDeps([json({ error: "음성인식 서비스에 연결하지 못했어요" }, 504)]);
+  assert.deepEqual(await createRecognizer(deps).recognize(audio), { ok: false, reason: "network" });
+  assert.equal(calls.length, 1);
+});
+
+test("서버가 502(키 오류·서비스 오류)면 다시 말해줄래(2-7)", async () => {
+  const { deps } = fakeDeps([json({ error: "음성인식에 실패했어요" }, 502)]);
+  assert.deepEqual(await createRecognizer(deps).recognize(audio), { ok: false, reason: "empty" });
+});

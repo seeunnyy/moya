@@ -365,8 +365,17 @@ export function ParentSettingsScreen() {
             }}
           />
           <SettingsRow label="음성 기록 삭제 요청" onClick={() => setDialog("delete")} />
-          <SettingsRow label="음성 수집 동의 철회" danger onClick={() => setDialog("withdraw")} />
+          {consent && !consent.required ? (
+            // 철회한 뒤에는 같은 자리에서 다시 동의(1-4)로 (피그마 없음 — 동의 없음 안내의 "설정에서 다시 동의" 길)
+            <SettingsRow label="음성 수집 동의하기" onClick={() => router.push("/parent/settings/consent")} />
+          ) : (
+            <SettingsRow label="음성 수집 동의 철회" danger onClick={() => setDialog("withdraw")} />
+          )}
         </SettingsGroup>
+        {/* 개인정보 안내 (피그마 없음, PM 확인 2026-10-12) */}
+        <p className="w-full px-1 type-caption text-text-faint">
+          질문 음성은 글자로 바꾸기 위해 OpenAI로 보내고, 모야는 음성을 저장하지 않아요. 글자로 바꾼 질문만 이 기기에 남아요.
+        </p>
         <p className="type-caption text-text-normal">계정</p>
         <SettingsGroup>
           <SettingsRow label="보호자 비밀번호 변경" onClick={() => router.push("/parent/settings/pin")} />

@@ -199,3 +199,9 @@ test("그 상태에 맞지 않는 액션은 무시한다", () => {
   const choose = run([{ type: "answerNo" }, { type: "pickContext", context: null }], confirm);
   assert.equal(run([{ type: "pickCandidate", entryId: "usan-1" }], choose), choose);
 });
+
+test("음성 수집 동의가 없으면 동의 안내, 거기서도 글자로 물을 수 있다", () => {
+  assert.deepEqual(run([{ type: "consentMissing" }]), { phase: "noConsent" });
+  const typed = run([{ type: "consentMissing" }, { type: "recognized", transcripts: ["저굼통이 뭐야?"] }]);
+  assert.equal(typed.phase, "confirm");
+});

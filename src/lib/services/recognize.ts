@@ -1,7 +1,8 @@
 // 화면 쪽 음성인식 어댑터: 녹음한 오디오를 우리 서버(/api/stt)로 보내 인식 후보를 받는다.
 // 외부 STT는 서버 라우트에서만 부르고, 여기서는 우리 서버만 부른다 (CLAUDE.md "외부 API는 서버에서만").
 // - 네트워크 오류(fetch 실패)는 한 번 다시 시도하고, 그래도 실패하면 "network" → 연결이 끊겼어요(E-1).
-// - 서버가 실패 응답을 주거나 결과가 비면 "empty" → 다시 말해줄래(2-7). 다시 시도하지 않는다.
+// - 서버가 504(STT 서비스에 닿지 않음, 서버가 이미 약 10초 기다림)면 다시 시도하지 않고 "network" → E-1.
+// - 그 밖 실패 응답이나 결과가 비면 "empty" → 다시 말해줄래(2-7). 다시 시도하지 않는다.
 // - mock STT일 때만 생각 중(2-3)을 최소 1.5초 보여준다(피그마 자동 넘김 흉내). 듣는 중 2.5초는 listenLimitMs.
 
 import { MAX_RECORDING_MS, MOCK_LISTEN_MS, MOCK_THINK_MS } from "../config.ts";
@@ -54,7 +55,7 @@ export function createRecognizer(deps: RecognizerDeps = browserDeps()) {
         response = null; // 네트워크 오류 → 한 번 더
       }
     }
-    if (!response) return { ok: false, reason: "network" };
+    if (!response || response.status === 504) return { ok: false, reason: "network" };
 
     let result: RecognizeResult = { ok: false, reason: "empty" };
     if (response.ok) {

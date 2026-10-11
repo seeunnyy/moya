@@ -16,3 +16,11 @@ export const MOCK_THINK_MS = 1500;
 
 // 2-13 → 2-14 오늘의 미션 성공 창 (실제로도 1.5초)
 export const MISSION_SUCCESS_DELAY_MS = 1500;
+
+// 말을 마치면 녹음을 자동으로 끝낸다 (실제 STT일 때만, PM 확인 2026-10-12. 값은 휴대폰 확인 때 조정).
+// 말을 시작한 뒤(소리 크기 VOICE_LEVEL 넘음) SILENCE_LEVEL 아래로 SILENCE_END_MS 동안 조용하면 끝. 처음 MIN_RECORDING_MS는 끝내지 않는다.
+// 소리 크기는 마이크 신호의 RMS(0~1).
+export const SILENCE_END_MS = 1200;
+export const MIN_RECORDING_MS = 800;
+export const VOICE_LEVEL = 0.04;
+export const SILENCE_LEVEL = 0.025;

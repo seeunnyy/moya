@@ -32,7 +32,7 @@ test("STT_PROVIDER가 없거나 mock이면 mock, 같은 서버에서는 순서�
   assert.deepEqual((await b.transcribe(audio)).transcripts, MOCK_STT_TURNS[1]);
 });
 
-test("아직 없는 STT 서비스를 고르면 오류 (라우트가 실패 응답 → 다시 말해줄래)", () => {
+test("없는 STT 서비스를 고르면 오류 (라우트가 실패 응답 → 다시 말해줄래)", () => {
   assert.throws(() => selectSttAdapter({ STT_PROVIDER: "something" }));
 });
 

@@ -25,6 +25,7 @@ import { newId } from "@/lib/id";
 import { speaker } from "@/lib/services/speech";
 import {
   readCards,
+  readConsent,
   readMission,
   readPending,
   readStars,
@@ -35,7 +36,7 @@ import {
   writePending,
   writeStars,
 } from "@/lib/storage";
-import { closeMic, micSupported, openMic } from "./microphone";
+import { closeMic, micSupported, openMic, recorderMimeType, watchSilence } from "./microphone";
 import { MIC_OFF_LINE, MicOffBody } from "./MicOffBody";
 import { useStored } from "./useStored";
 import { KidTop, LISTEN_PARAM } from "./KidTop";
@@ -70,6 +71,7 @@ const LINES = {
   unknown: "나도 아직 몰라!\n엄마 아빠랑 같이 알아볼게.",
   micOff: MIC_OFF_LINE,
   networkError: "앗, 모야 우주선 신호가 약해!\n다시 해 볼까?",
+  noConsent: "보호자님이 동의해야\n네 목소리를 들을 수 있어!", // 피그마 없음, PM 확인 2026-10-12
   blocked: "그 말은 엄마·아빠한테\n물어보자!", // 피그마에 없음 — 문구는 CLAUDE.md, 배치는 PM 확인 2026-10-11
 } as const;
 
@@ -94,6 +96,7 @@ function bubbleLine(state: AskState): string | null {
     case "blocked":
     case "micOff":
     case "networkError":
+    case "noConsent":
       return LINES[state.phase];
     case "confirm":
       return `${state.candidates[0].entry.word} 말하는 거야?`;
@@ -119,7 +122,7 @@ const CARD_STATUS = {
 
 const MISSION_SUCCESS_LINE = "오늘의 미션 성공! 모르는 말 3개를 물어봤어";
 
-type Recording = { recorder: MediaRecorder; stream: MediaStream; timer: number };
+type Recording = { recorder: MediaRecorder; stream: MediaStream; timer: number; stopSilence: () => void };
 type Playing = "bubble" | "card" | "spoken" | null;
 
 export function KidAskScreen() {
@@ -150,7 +153,7 @@ export function KidAskScreen() {
     const next = reducerRef.current(prev, action);
     current.current = next;
     setState(next);
-    if (next.phase !== "micOff") setTyping(false);
+    if (next.phase !== "micOff" && next.phase !== "noConsent") setTyping(false);
     // 2-8이 열릴 때 물어볼 단어로 저장 (같은 말은 한 번만)
     if (next.phase === "unknown" && prev.phase !== "unknown") savePending(next.spokenAs);
     const line = bubbleLine(next);
@@ -215,6 +218,7 @@ export function KidAskScreen() {
       recording.current = null;
       if (!r) return;
       window.clearTimeout(r.timer);
+      r.stopSilence();
       if (r.recorder.state !== "inactive") r.recorder.stop();
       closeMic(r.stream);
     };
@@ -234,6 +238,11 @@ export function KidAskScreen() {
   async function startListening() {
     if (opening.current || recording.current) return;
     stopSpeaking(); // 모야 목소리가 녹음에 섞이지 않게
+    // 보호자가 음성 수집에 동의하지 않았거나 철회했으면 녹음·전송하지 않고 안내 (PM 확인 2026-10-12)
+    if (readConsent()?.required !== true) {
+      send({ type: "consentMissing" });
+      return;
+    }
     if (!micSupported()) {
       send({ type: "micUnavailable" });
       return;
@@ -254,7 +263,8 @@ export function KidAskScreen() {
       return;
     }
     const chunks: Blob[] = [];
-    const recorder = new MediaRecorder(stream);
+    const mimeType = recorderMimeType(); // OpenAI가 받는 형식 (Chrome webm, Safari mp4)
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) chunks.push(event.data);
     };
@@ -264,7 +274,9 @@ export function KidAskScreen() {
     };
     recorder.start();
     const timer = window.setTimeout(stopListening, listenLimitMs(provider.current));
-    recording.current = { recorder, stream, timer };
+    // 실제 STT면 말을 마쳤을 때(침묵) 자동으로 끝낸다. mock은 피그마처럼 2.5초 고정
+    const stopSilence = provider.current && provider.current !== "mock" ? watchSilence(stream, stopListening) : () => {};
+    recording.current = { recorder, stream, timer, stopSilence };
     send({ type: "startListening" });
   }
 
@@ -278,6 +290,7 @@ export function KidAskScreen() {
     recording.current = null;
     if (!r) return;
     window.clearTimeout(r.timer);
+    r.stopSilence();
     send({ type: "stopListening" });
     if (r.recorder.state !== "inactive") r.recorder.stop(); // → onstop → recognize
   }
@@ -324,6 +337,7 @@ export function KidAskScreen() {
     recording.current = null;
     if (r) {
       window.clearTimeout(r.timer);
+      r.stopSilence();
       r.recorder.onstop = () => closeMic(r.stream); // 녹음한 것은 보내지 않는다
       if (r.recorder.state !== "inactive") r.recorder.stop();
     }
@@ -595,6 +609,27 @@ export function KidAskScreen() {
               />
             ) : undefined
           }
+        />
+      )}
+
+      {state.phase === "noConsent" && (
+        // 음성 수집 동의 없음 안내 (E-2 모양, 피그마 없음 — PM 확인 2026-10-12). 녹음·전송하지 않는다. 글자로는 물을 수 있다
+        <MicOffBody
+          line={LINES.noConsent}
+          guide={{ title: "보호자님, 음성 수집에 동의해 주세요", steps: ["보호자 메뉴 → 설정에서", "다시 동의할 수 있어요."] }}
+          onSpeak={bubbleSpeak}
+          playing={playing === "bubble"}
+          secondary={{ label: "보호자에게 도움 요청", icon: "/icons/lock.svg", onClick: () => router.push("/parent") }}
+          below={
+            <button
+              type="button"
+              onClick={() => setTyping(true)}
+              className="absolute top-full left-1/2 mt-2 -translate-x-1/2 py-1 type-moya-label whitespace-nowrap text-brand-deep touch-target"
+            >
+              글자로 물어볼래
+            </button>
+          }
+          replace={typing ? <TextFallback examples={EXAMPLE_PROMPTS} onAsk={askTyped} /> : undefined}
         />
       )}
 
