@@ -20,7 +20,7 @@ import {
   type ChildAge,
 } from "@/lib/storage";
 import { closeMic, micSupported, openMic } from "./microphone";
-import { SkeletonBody } from "./ScreenSkeleton";
+import { MIC_OFF_LINE, MicOffBody } from "./MicOffBody";
 import { useStored } from "./useStored";
 import { MoyaImage, Sparkle } from "./ui/Moya";
 import { SpeechBubble } from "./ui/SpeechBubble";
@@ -494,19 +494,19 @@ export function MicIntroScreen() {
   }
 
   if (denied) {
-    // E-2 마이크가 꺼져 있어요 — 화면은 그룹 11
+    // E-2 마이크가 꺼져 있어요 (180:8444). 가입이 끝나기 전이라 헤더·탭·[보호자에게 도움 요청]·글자 입력 없이
+    // [다시 해 볼래](허용되면 1-8, T9)와 1-6의 [나중에 할게요]만 둔다 (PM 확인 2026-10-11)
     return (
       <>
-        <TopBar left="back" onLeft={() => setDenied(false)} />
-        <SkeletonBody
-          code="E-2"
-          name="마이크가 꺼져 있어요"
-          group={11}
-          links={[
-            { label: "다시 해 볼래", onClick: () => void turnOn() },
-            { label: "나중에 할게요", href: "/signup/done" },
-          ]}
+        <MicOffBody
+          onSpeak={() => {
+            if (speaker.speak(MIC_OFF_LINE, () => setPlaying(false))) setPlaying(true);
+          }}
+          playing={playing}
+          onRetry={() => void turnOn()}
+          secondary={{ label: "나중에 할게요", onClick: () => router.push("/signup/done") }}
         />
+        {asking && <div className="fixed inset-0 z-50 mx-auto max-w-[402px] bg-dim-system" aria-hidden="true" />}
       </>
     );
   }

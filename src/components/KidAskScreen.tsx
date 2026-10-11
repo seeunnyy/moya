@@ -7,11 +7,12 @@
 // 2-7 다시 말해줄래(retry, [글자 카드로 고를래]면 폴백) · 2-8 물어볼 단어(unknown, 열릴 때 한 번 저장) · 부적절 단어(blocked).
 // 2-11·2-12는 2-2·2-3과 같은 상태다. E-2 마이크가 꺼져 있어요(micOff): 2-1은 마이크 상태와 상관없이 늘 피그마 그대로이고,
 // 마이크를 쓸 수 없으면(미지원·http·거부) 마이크를 눌렀을 때 E-2로 간다. 폴백(글자 입력·예시 알약)은 E-2 안 [글자로 물어볼래]에.
-// E-1(그룹 11)은 아직 뼈대다.
+// E-1 연결이 끊겼어요(networkError)는 어댑터가 한 번 다시 시도한 뒤에도 실패할 때.
 // 녹음은 MediaRecorder, 인식은 우리 서버(/api/stt) 어댑터, 모야 목소리는 speechSynthesis. 음성 원본은 보내고 버린다.
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { preload } from "react-dom";
 import { BLOCKED_WORDS } from "@/data/blocklist";
 import { EXAMPLE_PROMPTS } from "@/data/examplePrompts";
 import { MOCK_WORDS } from "@/data/words.mock";
@@ -35,7 +36,7 @@ import {
   writeStars,
 } from "@/lib/storage";
 import { closeMic, micSupported, openMic } from "./microphone";
-import { SkeletonBody } from "./ScreenSkeleton";
+import { MIC_OFF_LINE, MicOffBody } from "./MicOffBody";
 import { useStored } from "./useStored";
 import { KidTop, LISTEN_PARAM } from "./KidTop";
 import { MissionSuccess } from "./ui/mission";
@@ -46,7 +47,7 @@ import { TabBar } from "./ui/TabBar";
 import { TextFallback } from "./ui/TextFallback";
 import { Button, CircleButton } from "./ui/buttons";
 import { CandidateCard, ContextChip, LetterTiles, WordCardDetailed, WordCardSimple } from "./ui/cards";
-import { GuideBox, PendingWordNotice } from "./ui/notices";
+import { PendingWordNotice } from "./ui/notices";
 
 // 카드 날짜 "10월 8일"
 function cardDate(iso: string | undefined): string {
@@ -54,6 +55,9 @@ function cardDate(iso: string | undefined): string {
   const day = Number.isNaN(d.getTime()) ? new Date() : d;
   return `${day.getMonth() + 1}월 ${day.getDate()}일`;
 }
+
+// E-1 화면의 아이콘 (말풍선 스피커·재생 중, 다시 해 볼래, 처음으로)
+const OFFLINE_ICONS = ["/icons/speaker-sm.svg", "/icons/speaker-sm-playing.svg", "/icons/retry-white.svg", "/icons/home.svg"];
 
 // 말풍선 대사 (피그마 문구 그대로)
 const LINES = {
@@ -64,7 +68,8 @@ const LINES = {
   choose: "이 중에 있어?\n눌러서 골라 줘!",
   retry: "앗, 잘 못 들었어.\n한 번만 더 말해줄래?",
   unknown: "나도 아직 몰라!\n엄마 아빠랑 같이 알아볼게.",
-  micOff: "마이크가 꺼져 있어서\n네 목소리가 안 들려!",
+  micOff: MIC_OFF_LINE,
+  networkError: "앗, 모야 우주선 신호가 약해!\n다시 해 볼까?",
   blocked: "그 말은 엄마·아빠한테\n물어보자!", // 피그마에 없음 — 문구는 CLAUDE.md, 배치는 PM 확인 2026-10-11
 } as const;
 
@@ -88,6 +93,7 @@ function bubbleLine(state: AskState): string | null {
     case "unknown":
     case "blocked":
     case "micOff":
+    case "networkError":
       return LINES[state.phase];
     case "confirm":
       return `${state.candidates[0].entry.word} 말하는 거야?`;
@@ -102,11 +108,6 @@ function bubbleLine(state: AskState): string | null {
       return null;
   }
 }
-
-// 아직 만들지 않은 상태의 뼈대 (그룹 11)
-const SKELETON: Partial<Record<AskState["phase"], { code: string; name: string; group: number }>> = {
-  networkError: { code: "E-1", name: "연결이 끊겼어요", group: 11 },
-};
 
 // 카드 머리띠·별 (2-10은 새 카드. 이미 있던 단어면 그 카드의 상태를 보여 준다, T10)
 const CARD_STATUS = {
@@ -333,11 +334,13 @@ export function KidAskScreen() {
   preloadMoya("confused", 200, "cream"); // 2-7
   preloadMoya("explain", 190); // 2-8 · 부적절 단어
   preloadMoya("confused", 150, "cream"); // 2-7 폴백 · E-2
+  preloadMoya("confused", 210, "cream"); // E-1
+  // E-1은 연결이 끊긴 뒤에 열리므로 그때 받을 수 없는 아이콘을 미리 받아 둔다 (안 받아 두면 깨진 그림으로 보임)
+  for (const icon of OFFLINE_ICONS) preload(icon, { as: "image" });
 
   const line = bubbleLine(state);
   const bubbleSpeak = () => line && speak(line, "bubble");
   const card = state.phase === "collected" && state.cardId ? cards?.find((c) => c.id === state.cardId) : undefined;
-  const skeleton = SKELETON[state.phase];
 
   return (
     <>
@@ -558,49 +561,51 @@ export function KidAskScreen() {
 
       {state.phase === "micOff" && (
         // E-2 마이크가 꺼져 있어요 (180:8444). 폴백은 [글자로 물어볼래]를 누르면 안내·버튼 자리에 (PM 확인 2026-10-11)
-        <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pt-[18px] pb-[14px]">
-          <SpeechBubble
-            text={LINES.micOff}
-            onSpeak={bubbleSpeak}
-            playing={playing === "bubble"}
-            className="w-[290px] max-w-full"
-          />
-          <MoyaImage expression="confused" background="cream" size={150} />
-          {typing ? (
-            <TextFallback
-              examples={EXAMPLE_PROMPTS}
-              onAsk={askTyped}
-              onVoice={() => void startListening()}
-              voiceLabel="마이크 다시 해 볼래"
-            />
-          ) : (
-            <>
-              {/* 피그마 문구 그대로 (iPhone Safari 기준 안내) */}
-              <GuideBox title="보호자님, 이렇게 켜 주세요" steps={["1. 설정 앱을 열어요", "2. Safari → 마이크를 눌러요", "3. ‘허용’으로 바꿔요"]} />
-              {/* 권한을 다시 요청한다. 브라우저가 이미 차단했으면 권한 창 없이 다시 E-2 */}
-              <Button icon="/icons/retry-white.svg" onClick={() => void startListening()}>
-                다시 해 볼래
-              </Button>
-              {/* [글자로 물어볼래]는 피그마에 없어 레이아웃에 끼우지 않고 버튼 아래에 겹쳐 둔다 → 나머지는 피그마 E-2 자리 그대로 */}
-              <div className="relative w-full">
-                <Button variant="dashed" icon="/icons/lock.svg" onClick={() => router.push("/parent")}>
-                  보호자에게 도움 요청
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => setTyping(true)}
-                  className="absolute top-full left-1/2 mt-2 -translate-x-1/2 py-1 type-moya-label whitespace-nowrap text-brand-deep touch-target"
-                >
-                  글자로 물어볼래
-                </button>
-              </div>
-            </>
-          )}
-        </main>
+        <MicOffBody
+          onSpeak={bubbleSpeak}
+          playing={playing === "bubble"}
+          onRetry={() => void startListening()}
+          secondary={{ label: "보호자에게 도움 요청", icon: "/icons/lock.svg", onClick: () => router.push("/parent") }}
+          below={
+            <button
+              type="button"
+              onClick={() => setTyping(true)}
+              className="absolute top-full left-1/2 mt-2 -translate-x-1/2 py-1 type-moya-label whitespace-nowrap text-brand-deep touch-target"
+            >
+              글자로 물어볼래
+            </button>
+          }
+          replace={
+            typing ? (
+              <TextFallback
+                examples={EXAMPLE_PROMPTS}
+                onAsk={askTyped}
+                onVoice={() => void startListening()}
+                voiceLabel="마이크 다시 해 볼래"
+              />
+            ) : undefined
+          }
+        />
       )}
 
-      {skeleton && (
-        <SkeletonBody {...skeleton} links={[{ label: "처음으로", onClick: goHome }]} />
+      {state.phase === "networkError" && (
+        // E-1 연결이 끊겼어요 (180:8433). 어댑터가 한 번 자동으로 다시 시도한 뒤에도 연결이 안 될 때
+        <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pt-[18px] pb-[14px]">
+          <SpeechBubble
+            text={LINES.networkError}
+            onSpeak={bubbleSpeak}
+            playing={playing === "bubble"}
+            className="w-[300px] max-w-full"
+          />
+          <MoyaImage expression="confused" background="cream" size={210} />
+          <p className="type-caption whitespace-nowrap text-text-faint">자동으로 한 번 다시 시도했어요</p>
+          <Button icon="/icons/retry-white.svg" onClick={() => void startListening()}>
+            다시 해 볼래
+          </Button>
+          <Button variant="dashed" icon="/icons/home.svg" onClick={goHome}>
+            처음으로
+          </Button>
+        </main>
       )}
 
       <TabBar selected="play" onSelect={(key) => key === "play" && goHome()} />
