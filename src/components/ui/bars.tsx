@@ -66,6 +66,7 @@ const ICON_CIRCLE = {
   30: { box: "size-[30px]", icon: 18 },
   32: { box: "size-8", icon: 18 },
   44: { box: "size-11", icon: 24 },
+  48: { box: "size-12", icon: 26 }, // 2-0 미션 마이크
   72: { box: "size-[72px]", icon: 38 },
   80: { box: "size-20", icon: 42 },
 } as const;

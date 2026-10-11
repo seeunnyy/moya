@@ -209,3 +209,26 @@ export function addPendingOnce(list: PendingWord[], word: PendingWord): { list: 
   if (!spoken || list.some((w) => w.spokenAs.trim() === spoken)) return { list, added: false };
   return { list: [...list, { ...word, spokenAs: spoken }], added: true };
 }
+
+// ---- 별 받은 기록 (3-5) ----
+
+// "10월 9일"
+export function monthDay(date: Date): string {
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+export type StarHistoryItem = { title: string; when: string; amount: number; at: string };
+
+// 3-5 별 받은 기록: 최근 것부터 limit개 (PM 확인 2026-10-11: 최근 4개). 날짜는 오늘·어제·"10월 5일"
+export function starHistoryItems(records: StarRecord[], now: Date, limit = 4): StarHistoryItem[] {
+  const today = localDateKey(now);
+  return starHistory(records)
+    .slice(0, limit)
+    .map((r) => {
+      const at = new Date(r.at);
+      const key = Number.isNaN(at.getTime()) ? "" : localDateKey(at);
+      const when = key === today ? "오늘" : key && daysBetween(key, today) === 1 ? "어제" : key ? monthDay(at) : "";
+      const title = r.reason === "mission" ? "오늘의 미션 성공!" : `${r.word ?? ""} 카드 모았어`;
+      return { title, when, amount: r.amount, at: r.at };
+    });
+}

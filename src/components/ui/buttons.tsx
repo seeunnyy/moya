@@ -66,19 +66,20 @@ export function SpeakerButton({
   );
 }
 
-// 52px 원형 버튼: 뒤로·닫기·지구 사전 등 (180:6665). 누름은 연한 보라 + 그림자 1px
+// 원형 버튼: 52(뒤로·닫기·지구 사전 등, 180:6665) · 44(3-5 뒤로 180:7688). 누름은 연한 보라 + 그림자 1px
 export function CircleButton({
   icon,
   label,
   badge,
+  size = 52,
   className = "",
   ...rest
-}: NativeButton & { icon: string; label: string; badge?: string }) {
+}: NativeButton & { icon: string; label: string; badge?: string; size?: 52 | 44 }) {
   return (
     <button
       type="button"
       aria-label={label}
-      className={`relative flex size-[52px] shrink-0 items-center justify-center rounded-[26px] border-2 border-line-beige bg-white drop-shadow-beige active:bg-brand-faint active:pt-[3px] active:drop-shadow-beige-pressed ${className}`}
+      className={`relative flex shrink-0 items-center justify-center rounded-full border-2 ${size === 52 ? "size-[52px]" : "size-11 touch-target"} border-line-beige bg-white drop-shadow-beige active:bg-brand-faint active:pt-[3px] active:drop-shadow-beige-pressed ${className}`}
       {...rest}
     >
       <Img src={icon} size={26} />

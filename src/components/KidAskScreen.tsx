@@ -16,7 +16,8 @@ import { EXAMPLE_PROMPTS } from "@/data/examplePrompts";
 import { MOCK_WORDS } from "@/data/words.mock";
 import type { HeardContext } from "@/types";
 import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
-import { addPendingOnce, collectAskedCard, missionStars, starTotal } from "@/lib/progress";
+import { MISSION_SUCCESS_DELAY_MS } from "@/lib/config";
+import { addPendingOnce, collectAskedCard, STARS_PER_MISSION } from "@/lib/progress";
 import { createRecognizer, listenLimitMs } from "@/lib/services/recognize";
 import { speaker } from "@/lib/services/speech";
 import {
@@ -33,7 +34,8 @@ import {
 import { closeMic, micPermission, micSupported, openMic } from "./microphone";
 import { SkeletonBody } from "./ScreenSkeleton";
 import { useStored } from "./useStored";
-import { KidHeader } from "./ui/KidHeader";
+import { KidTop, LISTEN_PARAM } from "./KidTop";
+import { MissionSuccess } from "./ui/mission";
 import { MicArea } from "./ui/MicButton";
 import { GiftButton, MoyaImage, MoyaListening, MoyaStage, preloadMoya, Sparkle } from "./ui/Moya";
 import { SpeechBubble } from "./ui/SpeechBubble";
@@ -92,8 +94,10 @@ function bubbleLine(state: AskState): string | null {
     case "explaining":
       return state.entry.bubbleExplanation || state.entry.kidExplanation;
     case "collected":
-      // 이미 있던 단어여도 피그마 문구 그대로 (잠정 T10)
-      return `${state.entry.word} 카드 모았다!\n별 1개 받았어!`;
+      // 이미 있던 단어여도 피그마 문구 그대로 (잠정 T10). 세 번째 새 카드면 2-13 문구
+      return state.missionCompleted
+        ? `${state.entry.word} 카드 모았다!\n오늘의 미션 끝!`
+        : `${state.entry.word} 카드 모았다!\n별 1개 받았어!`;
     default:
       return null;
   }
@@ -114,13 +118,13 @@ const CARD_STATUS = {
 
 const noSubscribe = () => () => {};
 
+const MISSION_SUCCESS_LINE = "오늘의 미션 성공! 모르는 말 3개를 물어봤어";
+
 type Recording = { recorder: MediaRecorder; stream: MediaStream; timer: number };
 type Playing = "bubble" | "card" | "spoken" | null;
 
 export function KidAskScreen() {
   const router = useRouter();
-  const stars = useStored(readStars);
-  const mission = useStored(readMission);
   const cards = useStored(readCards);
   const taught = useStored(readTaught);
 
@@ -148,6 +152,9 @@ export function KidAskScreen() {
     if (next.phase === "unknown" && prev.phase !== "unknown") savePending(next.spokenAs);
     const line = bubbleLine(next);
     if (line && next.phase !== "listening" && line !== bubbleLine(prev)) speak(line, "bubble");
+    // 2-14가 열리면 창의 글을 읽는다
+    if (next.phase === "collected" && next.missionSuccessOpen && !(prev.phase === "collected" && prev.missionSuccessOpen))
+      speak(MISSION_SUCCESS_LINE, "bubble");
   }
 
   const recognizer = useMemo(() => createRecognizer(), []);
@@ -170,6 +177,28 @@ export function KidAskScreen() {
     };
   }, []);
   const micUnavailable = !supported || micDenied;
+
+  // 2-13 → 1.5초 뒤 2-14 (실제로도 1.5초, design.md 이동표)
+  const waitingSuccess = state.phase === "collected" && state.missionCompleted && !state.missionSuccessOpen;
+  useEffect(() => {
+    if (!waitingSuccess) return;
+    const t = window.setTimeout(() => send({ type: "openMissionSuccess" }), MISSION_SUCCESS_DELAY_MS);
+    return () => window.clearTimeout(t);
+    // send는 ref로 최신 상태를 읽으므로 의존성에 넣지 않는다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waitingSuccess]);
+
+  // 다른 화면의 2-0 [지금 물어볼래] → /app?listen=1 → 열리자마자 듣기(2-2)
+  const startRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get(LISTEN_PARAM) !== "1") return;
+    // 주소 정리는 실제로 시작할 때 한다 (개발 모드에서 효과가 두 번 돌아도 한 번은 시작하게)
+    const t = window.setTimeout(() => {
+      window.history.replaceState(null, "", "/app");
+      startRef.current();
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
   const askTyped = (text: string) => send({ type: "recognized", transcripts: [text] });
 
   // mock STT인지 미리 물어 둔다 (mock이면 2.5초 뒤 자동으로 녹음을 끝낸다)
@@ -241,6 +270,10 @@ export function KidAskScreen() {
     recording.current = { recorder, stream, timer };
     send({ type: "startListening" });
   }
+
+  useEffect(() => {
+    startRef.current = () => void startListening();
+  });
 
   // 2-2 마이크 다시 누름 · mock 2.5초 · 최대 녹음 시간 → 2-3
   function stopListening() {
@@ -317,11 +350,8 @@ export function KidAskScreen() {
 
   return (
     <>
-      <KidHeader
-        stars={stars ? starTotal(stars) : 0}
-        missionDone={mission ? missionStars(mission, new Date()) : 0}
-        onOpenStars={() => router.push("/app/me/stars")}
-      />
+      {/* 2-13: 미션 별 +3은 2-14가 열릴 때 보인다 (피그마 2-13 헤더 26, 2-14 29) */}
+      <KidTop onAsk={() => void startListening()} starsHidden={waitingSuccess ? STARS_PER_MISSION : 0} />
 
       {(state.phase === "idle" || state.phase === "listening" || state.phase === "thinking") && (
         <main className="flex flex-1 flex-col items-center justify-center gap-[18px] px-6 pt-[18px] pb-[14px]">
@@ -543,6 +573,10 @@ export function KidAskScreen() {
       )}
 
       <TabBar selected="play" onSelect={(key) => key === "play" && goHome()} />
+
+      {state.phase === "collected" && state.missionSuccessOpen && (
+        <MissionSuccess onOk={() => router.push("/app/me/stars")} />
+      )}
     </>
   );
 }

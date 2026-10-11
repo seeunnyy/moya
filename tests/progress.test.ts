@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   addPendingOnce,
+  starHistoryItems,
   addTodayWordCard,
   collectAskedCard,
   daysWithMoya,
@@ -190,4 +191,29 @@ test("물어볼 단어: 같은 말은 한 번만 넣는다 (앞뒤 공백 무시
   assert.equal(r.list.length, 1);
   assert.equal(addPendingOnce(r.list, w("c", "뿌잉")).list.length, 2);
   assert.equal(addPendingOnce([], w("d", "  ")).added, false);
+});
+
+test("별 받은 기록: 최근 4개, 오늘·어제·날짜, 미션은 '오늘의 미션 성공!'", () => {
+  const now = new Date(2026, 9, 11, 15);
+  const at = (d: number, h = 10) => new Date(2026, 9, d, h).toISOString();
+  const items = starHistoryItems(
+    [
+      { reason: "card", amount: 1, at: at(5), word: "나비" },
+      { reason: "mission", amount: 3, at: at(10, 18) },
+      { reason: "card", amount: 1, at: at(11, 9), word: "저금통" },
+      { reason: "today", amount: 1, at: at(10, 9), word: "씨앗" },
+      { reason: "card", amount: 1, at: at(1), word: "무지개" },
+    ],
+    now,
+  );
+  assert.deepEqual(
+    items.map((i) => [i.title, i.when, i.amount]),
+    [
+      ["저금통 카드 모았어", "오늘", 1],
+      ["오늘의 미션 성공!", "어제", 3],
+      ["씨앗 카드 모았어", "어제", 1],
+      ["나비 카드 모았어", "10월 5일", 1],
+    ],
+  );
+  assert.deepEqual(starHistoryItems([], now), []);
 });

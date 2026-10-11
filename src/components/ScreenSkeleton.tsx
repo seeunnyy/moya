@@ -5,9 +5,9 @@
 
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { MISSION_GOAL, missionStars, starTotal } from "@/lib/progress";
-import { readMission, readStars } from "@/lib/storage";
-import { KidHeader } from "./ui/KidHeader";
+import { MISSION_GOAL, missionStars } from "@/lib/progress";
+import { readMission } from "@/lib/storage";
+import { KidTop } from "./KidTop";
 import { TabBar, type TabKey } from "./ui/TabBar";
 import { TopBar } from "./ui/bars";
 import { Button } from "./ui/buttons";
@@ -49,16 +49,10 @@ export function SkeletonBody({ code, name, group, links = [], children }: Body) 
 }
 
 export function KidSkeleton({ tab, children, ...body }: Body & { tab?: TabKey }) {
-  const router = useRouter();
-  const stars = useStored(readStars);
   const mission = useStored(readMission);
   return (
     <>
-      <KidHeader
-        stars={stars ? starTotal(stars) : 0}
-        missionDone={mission ? missionStars(mission, new Date()) : 0}
-        onOpenStars={() => router.push("/app/me/stars")}
-      />
+      <KidTop />
       <SkeletonBody {...body}>
         {children}
         {mission && (
