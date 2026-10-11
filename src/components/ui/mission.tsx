@@ -81,7 +81,7 @@ export function MissionSuccess({ onOk }: { onOk: () => void }) {
       <div className="absolute inset-0 bg-dim-strong" />
       {/* 카드: 가로 가운데, 세로는 가운데보다 11px 위 (402×812에서 피그마 y 246.5 − 62) */}
       <div className="absolute top-[calc(50%-11px)] left-1/2 w-[340px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2">
-        <div className="flex flex-col items-center gap-3 rounded-[32px] border-4 border-white bg-cream p-6">
+        <div className="flex flex-col items-center gap-3 rounded-[32px] border-4 border-white bg-cream p-6 motion-safe:animate-pop">
           <MoyaImage expression="excited" background="cream" size={150} />
           <h2 className="type-moya-title-xl whitespace-nowrap text-text-strong">오늘의 미션 성공!</h2>
           <p className="type-body-bold whitespace-nowrap text-text-normal">모르는 말 3개를 물어봤어</p>

@@ -90,7 +90,10 @@ function SoundWave({ side }: { side: "left" | "right" }) {
   return (
     <span className="relative h-11 w-[30px] shrink-0 overflow-clip">
       <span className={`absolute top-[0.5px] h-[43px] w-[26.5px] ${side === "left" ? "left-px -scale-x-100" : "left-[2.5px]"}`}>
-        <FillImg src="/ui/sound-wave.svg" className="inset-0" />
+        {/* 모션: 물결이 울렁 (스토리보드 장면 4). 좌우 뒤집기와 겹치지 않게 안쪽에 */}
+        <span className={`absolute inset-0 motion-safe:animate-wave ${side === "right" ? "[animation-delay:0.45s]" : ""}`}>
+          <FillImg src="/ui/sound-wave.svg" className="inset-0" />
+        </span>
       </span>
     </span>
   );
@@ -121,7 +124,10 @@ export function Sparkle({
 }) {
   return (
     <span className={`pointer-events-none absolute ${className}`} aria-hidden="true">
-      <Img src={SPARKLE_COLOR[color]} size={size} />
+      {/* 모션: 반짝반짝 (크기마다 박자를 조금씩 어긋나게) */}
+      <span className="block motion-safe:animate-twinkle" style={{ animationDelay: `${(size % 5) * 0.35}s` }}>
+        <Img src={SPARKLE_COLOR[color]} size={size} />
+      </span>
     </span>
   );
 }

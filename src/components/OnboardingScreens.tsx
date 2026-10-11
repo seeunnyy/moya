@@ -83,7 +83,8 @@ export function StartScreen() {
   return (
     <div className="relative flex flex-1 flex-col">
       <main className="flex flex-1 flex-col items-center justify-center gap-2.5 px-6 pt-10 pb-3">
-        <MoyaImage expression="greet" background="cream" size={270} priority />
+        {/* 모션: 위에서 떨어져 콩 착지 (스토리보드 장면 1) */}
+        <MoyaImage expression="greet" background="cream" size={270} priority className="motion-safe:animate-moya-land" />
         <h1 className="font-jua text-[46px] leading-[1.15] whitespace-nowrap text-text-strong">모야, 모야?</h1>
         <p className="type-moya-title-m whitespace-nowrap text-brand-deep">모르는 말, 모야한테 물어봐!</p>
         <p className="w-[300px] max-w-full text-center type-body-small whitespace-pre-line text-text-normal">

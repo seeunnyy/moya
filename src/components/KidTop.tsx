@@ -17,9 +17,11 @@ export const LISTEN_PARAM = "listen"; // /app?listen=1 → 열리자마자 듣�
 export function KidTop({
   onAsk,
   starsHidden = 0,
+  bumpStars = false,
 }: {
   onAsk?: () => void; // 없으면 /app?listen=1로
   starsHidden?: number; // 아직 보여 주지 않을 별 (2-13: 미션 별 +3은 2-14에서 보인다)
+  bumpStars?: boolean; // 별이 막 늘었을 때 (2-10·2-13)
 }) {
   const router = useRouter();
   const stars = useStored(readStars);
@@ -35,6 +37,7 @@ export function KidTop({
         missionDone={done}
         onOpenMission={() => setSheet(true)}
         onOpenStars={() => router.push("/app/me/stars")}
+        bumpStars={bumpStars}
       />
       {sheet && (
         <BottomSheet label="오늘의 미션" onClose={() => setSheet(false)}>

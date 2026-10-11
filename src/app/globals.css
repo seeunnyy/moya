@@ -235,3 +235,69 @@ body {
 [tabindex="-1"]:focus {
   outline: none;
 }
+
+/* 모션 (그룹 13, 온보딩 모션 스토리보드 180:9283의 움직임 원칙을 앱 화면에 — PM 확인 2026-10-11).
+   모두 CSS만 쓰고, 화면에서는 `motion-safe:` 변형으로만 붙여 '동작 줄이기'(prefers-reduced-motion)에서는 움직이지 않는다.
+   한 번 움직이는 것은 피그마 화면과 같은 모습(변형 없음)으로 끝난다. */
+@theme {
+  /* 1-1 모야 착지: 떨어질 땐 점점 빠르게 → 땅에 닿으며 찌그러졌다 펴짐(스프링) */
+  --animate-moya-land: moya-land 0.9s both;
+  /* 말풍선: 0.6 → 1.05 → 1 로 톡 */
+  --animate-pop: pop 0.35s ease-out both;
+  /* 2-1 마이크: 두근두근 1 → 1.06, 후광 물결 두 겹 */
+  --animate-heartbeat: heartbeat 1.6s ease-in-out infinite;
+  --animate-halo: halo 1.6s ease-out infinite;
+  /* 2-2 소리 물결 */
+  --animate-wave: wave 0.9s ease-in-out infinite;
+  /* 2-3 생각 중 점: 하나씩 */
+  --animate-dot: dot 1.2s ease-in-out infinite;
+  /* 2-10 카드 빙글 등장 */
+  --animate-card-spin: card-spin 0.6s cubic-bezier(0.2, 0.8, 0.3, 1.1) both;
+  /* 별 칩 통통 */
+  --animate-bump: bump 0.5s ease-out both;
+  /* 반짝이 */
+  --animate-twinkle: twinkle 2.4s ease-in-out infinite;
+
+  @keyframes moya-land {
+    0% { transform: translateY(-260px); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+    60% { transform: translateY(0) scale(1.08, 0.9); animation-timing-function: ease-out; }
+    78% { transform: translateY(-14px) scale(0.97, 1.04); animation-timing-function: ease-in; }
+    90% { transform: translateY(0) scale(1.02, 0.98); }
+    100% { transform: none; }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    65% { transform: scale(1.05); opacity: 1; }
+    100% { transform: none; opacity: 1; }
+  }
+  @keyframes heartbeat {
+    0%, 100% { transform: none; }
+    50% { transform: scale(1.06); }
+  }
+  @keyframes halo {
+    0% { transform: scale(0.9); opacity: 0.55; }
+    100% { transform: scale(1.45); opacity: 0; }
+  }
+  @keyframes wave {
+    0%, 100% { transform: none; opacity: 1; }
+    50% { transform: scaleY(0.8); opacity: 0.6; }
+  }
+  @keyframes dot {
+    0%, 100% { opacity: 1; }
+    40% { opacity: 0.25; }
+  }
+  @keyframes card-spin {
+    0% { transform: perspective(900px) rotateY(-90deg) scale(0.85); opacity: 0; }
+    60% { opacity: 1; }
+    100% { transform: none; opacity: 1; }
+  }
+  @keyframes bump {
+    0%, 100% { transform: none; }
+    35% { transform: scale(1.2); }
+    65% { transform: scale(0.95); }
+  }
+  @keyframes twinkle {
+    0%, 100% { transform: none; opacity: 1; }
+    50% { transform: scale(0.7) rotate(15deg); opacity: 0.55; }
+  }
+}

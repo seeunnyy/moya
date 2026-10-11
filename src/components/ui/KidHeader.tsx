@@ -59,9 +59,11 @@ export function KidHeader({
   stars,
   onOpenMission,
   onOpenStars,
+  bumpStars = false,
 }: {
   missionDone: number;
   stars: number;
+  bumpStars?: boolean; // 별이 막 늘었을 때 칩이 통통 (모션, 스토리보드 장면 5)
   onOpenMission?: () => void;
   onOpenStars?: () => void;
 }) {
@@ -77,7 +79,7 @@ export function KidHeader({
         <Img src="/icons/avatar.svg" size={44} />
         <MissionTracker done={done} />
       </button>
-      <TopChip kind="star" value={String(stars)} label={`모은 별 ${stars}개 보기`} onClick={onOpenStars} />
+      <TopChip kind="star" value={String(stars)} label={`모은 별 ${stars}개 보기`} onClick={onOpenStars} className={bumpStars ? "motion-safe:animate-bump" : ""} />
     </header>
   );
 }

@@ -350,7 +350,11 @@ export function KidAskScreen() {
   return (
     <>
       {/* 2-13: 미션 별 +3은 2-14가 열릴 때 보인다 (피그마 2-13 헤더 26, 2-14 29) */}
-      <KidTop onAsk={() => void startListening()} starsHidden={waitingSuccess ? STARS_PER_MISSION : 0} />
+      <KidTop
+        onAsk={() => void startListening()}
+        starsHidden={waitingSuccess ? STARS_PER_MISSION : 0}
+        bumpStars={state.phase === "collected" && state.isNew}
+      />
 
       {(state.phase === "idle" || state.phase === "listening" || state.phase === "thinking") && (
         <main className="flex flex-1 flex-col items-center justify-center gap-[18px] px-6 pt-[18px] pb-[14px]">
@@ -554,6 +558,7 @@ export function KidAskScreen() {
             example={state.entry.example}
             stars={CARD_STATUS[card?.status ?? "new"].stars}
             reviewText="며칠 뒤 모야가 다시 물어볼게!"
+            className="motion-safe:animate-card-spin"
           />
           <div className="flex w-full items-center gap-3">
             <Button icon="/icons/mic-white.svg" className="min-w-px flex-1" onClick={() => void startListening()}>

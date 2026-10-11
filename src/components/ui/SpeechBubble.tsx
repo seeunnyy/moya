@@ -1,5 +1,5 @@
 // 모야 말풍선 (컴포넌트 보드 '말풍선' 180:6681): 꼬리 아래·위·왼쪽·없음, 오른쪽에 다시 듣기 버튼.
-// 대사는 화면에 보이고, 바뀔 때 보조기기가 읽도록 aria-live로 둔다(child-accessibility).
+// 대사는 화면에 보이고, 바뀔 때 보조기기가 읽도록 aria-live로 둔다(child-accessibility). 나타날 때 0.6 → 1.05 → 1로 톡 (모션, 동작 줄이기에서는 없음)
 
 import { FillImg } from "./Img";
 import { SpeakerButton } from "./buttons";
@@ -25,7 +25,7 @@ export function SpeechBubble({
 }) {
   return (
     <div
-      className={`relative flex items-center gap-3 rounded-[18px] border-2 border-bubble-line bg-white py-[18px] pr-4 pl-[22px] drop-shadow-bubble ${className}`}
+      className={`relative flex items-center gap-3 rounded-[18px] border-2 border-bubble-line bg-white py-[18px] pr-4 pl-[22px] drop-shadow-bubble motion-safe:animate-pop ${className}`}
     >
       <p aria-live="polite" className="min-w-px flex-1 type-moya-bubble whitespace-pre-line text-text-strong">
         {text}
