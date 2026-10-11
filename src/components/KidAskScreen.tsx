@@ -5,12 +5,13 @@
 // 2-1 홈(idle) · 2-2 듣는 중(listening) · 2-3 생각 중(thinking) · 2-4 확인 질문(confirm) · 2-9 뜻 알려주기(explaining) · 2-10 카드 획득(collected).
 // 2-5 어디서 들었어?(context) · 2-6 후보 고르기(choose)에서 고른 단어도 같은 2-9·2-10으로 간다(2-9b·2-9c·2-10b·2-10c).
 // 2-7 다시 말해줄래(retry, [글자 카드로 고를래]면 폴백) · 2-8 물어볼 단어(unknown, 열릴 때 한 번 저장) · 부적절 단어(blocked).
-// 2-11·2-12는 2-2·2-3과 같은 상태다. E-1·E-2(그룹 11)는 아직 뼈대다.
-// 마이크를 쓸 수 없는 기기(미지원·http·이미 거부)면 2-1의 마이크 자리에 폴백(글자 입력·예시 알약)을 둔다.
+// 2-11·2-12는 2-2·2-3과 같은 상태다. E-2 마이크가 꺼져 있어요(micOff): 2-1은 마이크 상태와 상관없이 늘 피그마 그대로이고,
+// 마이크를 쓸 수 없으면(미지원·http·거부) 마이크를 눌렀을 때 E-2로 간다. 폴백(글자 입력·예시 알약)은 E-2 안 [글자로 물어볼래]에.
+// E-1(그룹 11)은 아직 뼈대다.
 // 녹음은 MediaRecorder, 인식은 우리 서버(/api/stt) 어댑터, 모야 목소리는 speechSynthesis. 음성 원본은 보내고 버린다.
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BLOCKED_WORDS } from "@/data/blocklist";
 import { EXAMPLE_PROMPTS } from "@/data/examplePrompts";
 import { MOCK_WORDS } from "@/data/words.mock";
@@ -31,7 +32,7 @@ import {
   writePending,
   writeStars,
 } from "@/lib/storage";
-import { closeMic, micPermission, micSupported, openMic } from "./microphone";
+import { closeMic, micSupported, openMic } from "./microphone";
 import { SkeletonBody } from "./ScreenSkeleton";
 import { useStored } from "./useStored";
 import { KidTop, LISTEN_PARAM } from "./KidTop";
@@ -43,7 +44,7 @@ import { TabBar } from "./ui/TabBar";
 import { TextFallback } from "./ui/TextFallback";
 import { Button, CircleButton } from "./ui/buttons";
 import { CandidateCard, ContextChip, LetterTiles, WordCardDetailed, WordCardSimple } from "./ui/cards";
-import { PendingWordNotice } from "./ui/notices";
+import { GuideBox, PendingWordNotice } from "./ui/notices";
 
 // crypto.randomUUID는 http(휴대폰에서 개발 서버 접속)에서 없을 수 있어 직접 만든다.
 function newId() {
@@ -66,6 +67,7 @@ const LINES = {
   choose: "이 중에 있어?\n눌러서 골라 줘!",
   retry: "앗, 잘 못 들었어.\n한 번만 더 말해줄래?",
   unknown: "나도 아직 몰라!\n엄마 아빠랑 같이 알아볼게.",
+  micOff: "마이크가 꺼져 있어서\n네 목소리가 안 들려!",
   blocked: "그 말은 엄마·아빠한테\n물어보자!", // 피그마에 없음 — 문구는 CLAUDE.md, 배치는 PM 확인 2026-10-11
 } as const;
 
@@ -88,6 +90,7 @@ function bubbleLine(state: AskState): string | null {
     case "retry":
     case "unknown":
     case "blocked":
+    case "micOff":
       return LINES[state.phase];
     case "confirm":
       return `${state.candidates[0].entry.word} 말하는 거야?`;
@@ -106,7 +109,6 @@ function bubbleLine(state: AskState): string | null {
 // 아직 만들지 않은 상태의 뼈대 (그룹 11)
 const SKELETON: Partial<Record<AskState["phase"], { code: string; name: string; group: number }>> = {
   networkError: { code: "E-1", name: "연결이 끊겼어요", group: 11 },
-  micOff: { code: "E-2", name: "마이크가 꺼져 있어요", group: 11 },
 };
 
 // 카드 머리띠·별 (2-10은 새 카드. 이미 있던 단어면 그 카드의 상태를 보여 준다, T10)
@@ -116,7 +118,6 @@ const CARD_STATUS = {
   mastered: { label: "다 앎", stars: 3 },
 } as const;
 
-const noSubscribe = () => () => {};
 
 const MISSION_SUCCESS_LINE = "오늘의 미션 성공! 모르는 말 3개를 물어봤어";
 
@@ -148,6 +149,7 @@ export function KidAskScreen() {
     const next = reducerRef.current(prev, action);
     current.current = next;
     setState(next);
+    if (next.phase !== "micOff") setTyping(false);
     // 2-8이 열릴 때 물어볼 단어로 저장 (같은 말은 한 번만)
     if (next.phase === "unknown" && prev.phase !== "unknown") savePending(next.spokenAs);
     const line = bubbleLine(next);
@@ -164,19 +166,8 @@ export function KidAskScreen() {
   const left = useRef(false); // 화면을 떠났으면 늦게 온 결과를 버린다
   const [playing, setPlaying] = useState<Playing>(null);
 
-  // 마이크를 쓸 수 없는 기기면 2-1에 폴백을 둔다: 미지원·http(바로 앎), 권한이 이미 거부됨(물어봐서 앎)
-  const supported = useSyncExternalStore(noSubscribe, micSupported, () => true);
-  const [micDenied, setMicDenied] = useState(false);
-  useEffect(() => {
-    let active = true;
-    void micPermission().then((p) => {
-      if (active && p === "denied") setMicDenied(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-  const micUnavailable = !supported || micDenied;
+  // E-2에서 [글자로 물어볼래]를 눌러 폴백을 보이는 중 (E-2를 떠나면 다시 안내로)
+  const [typing, setTyping] = useState(false);
 
   // 2-13 → 1.5초 뒤 2-14 (실제로도 1.5초, design.md 이동표)
   const waitingSuccess = state.phase === "collected" && state.missionCompleted && !state.missionSuccessOpen;
@@ -341,7 +332,7 @@ export function KidAskScreen() {
   preloadMoya("excited", 96, "cream");
   preloadMoya("confused", 200, "cream"); // 2-7
   preloadMoya("explain", 190); // 2-8 · 부적절 단어
-  preloadMoya("confused", 150, "cream"); // 2-7 폴백
+  preloadMoya("confused", 150, "cream"); // 2-7 폴백 · E-2
 
   const line = bubbleLine(state);
   const bubbleSpeak = () => line && speak(line, "bubble");
@@ -358,21 +349,17 @@ export function KidAskScreen() {
           {state.phase === "idle" ? (
             <>
               <SpeechBubble text={LINES.idle} onSpeak={bubbleSpeak} playing={playing === "bubble"} className="w-[270px]" />
-              {/* 반짝이(왼쪽 30)와 오늘의 단어(오른쪽 12)는 앱 틀 가장자리 기준, 높이는 모야 무대 기준 (피그마 절대 위치) */}
-              {/* 마이크를 쓸 수 없으면 폴백이 들어갈 자리를 위해 무대 대신 모야 150 (PM 확인 2026-10-11) */}
+              {/* 반짝이(왼쪽 30)와 오늘의 단어(오른쪽 12)는 앱 틀 가장자리 기준, 높이는 모야 무대 기준 (피그마 절대 위치).
+                  마이크 상태와 상관없이 늘 피그마 2-1 그대로 (PM 결정 2026-10-11) */}
               <div className="relative -mx-6 flex justify-center self-stretch">
-                {micUnavailable ? <MoyaImage expression="explain" size={150} /> : <MoyaStage expression="explain" />}
-                <Sparkle className={`left-[30px] ${micUnavailable ? "top-5" : "top-[54px]"}`} />
+                <MoyaStage expression="explain" />
+                <Sparkle className="top-[54px] left-[30px]" />
                 {/* 3-3 오늘의 단어 화면은 그룹 8. 지금은 모양만 */}
-                <span className={`absolute right-3 ${micUnavailable ? "top-[35px]" : "top-[84px]"}`}>
+                <span className="absolute top-[84px] right-3">
                   <GiftButton hasNew />
                 </span>
               </div>
-              {micUnavailable ? (
-                <TextFallback examples={EXAMPLE_PROMPTS} onAsk={askTyped} />
-              ) : (
-                <MicArea state="idle" onPress={() => void startListening()} />
-              )}
+              <MicArea state="idle" onPress={() => void startListening()} />
             </>
           ) : (
             <>
@@ -565,6 +552,49 @@ export function KidAskScreen() {
             </Button>
             <CircleButton icon="/icons/card-book.svg" label="지구 사전" onClick={() => router.push("/app/dictionary")} />
           </div>
+        </main>
+      )}
+
+      {state.phase === "micOff" && (
+        // E-2 마이크가 꺼져 있어요 (180:8444). 폴백은 [글자로 물어볼래]를 누르면 안내·버튼 자리에 (PM 확인 2026-10-11)
+        <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pt-[18px] pb-[14px]">
+          <SpeechBubble
+            text={LINES.micOff}
+            onSpeak={bubbleSpeak}
+            playing={playing === "bubble"}
+            className="w-[290px] max-w-full"
+          />
+          <MoyaImage expression="confused" background="cream" size={150} />
+          {typing ? (
+            <TextFallback
+              examples={EXAMPLE_PROMPTS}
+              onAsk={askTyped}
+              onVoice={() => void startListening()}
+              voiceLabel="마이크 다시 해 볼래"
+            />
+          ) : (
+            <>
+              {/* 피그마 문구 그대로 (iPhone Safari 기준 안내) */}
+              <GuideBox title="보호자님, 이렇게 켜 주세요" steps={["1. 설정 앱을 열어요", "2. Safari → 마이크를 눌러요", "3. ‘허용’으로 바꿔요"]} />
+              {/* 권한을 다시 요청한다. 브라우저가 이미 차단했으면 권한 창 없이 다시 E-2 */}
+              <Button icon="/icons/retry-white.svg" onClick={() => void startListening()}>
+                다시 해 볼래
+              </Button>
+              {/* [글자로 물어볼래]는 피그마에 없어 레이아웃에 끼우지 않고 버튼 아래에 겹쳐 둔다 → 나머지는 피그마 E-2 자리 그대로 */}
+              <div className="relative w-full">
+                <Button variant="dashed" icon="/icons/lock.svg" onClick={() => router.push("/parent")}>
+                  보호자에게 도움 요청
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setTyping(true)}
+                  className="absolute top-full left-1/2 mt-2 -translate-x-1/2 py-1 type-moya-label whitespace-nowrap text-brand-deep touch-target"
+                >
+                  글자로 물어볼래
+                </button>
+              </div>
+            </>
+          )}
         </main>
       )}
 

@@ -1,4 +1,4 @@
-// 안내 상자들: 2-8 물어볼 단어 180:6941, 온보딩 1-4 안내 180:7319, 1-6 안내 알약 180:7357, 1-8 보호자 메뉴 안내 180:7403,
+// 안내 상자들: 2-8 물어볼 단어 180:6941, E-2 보호자 안내 180:8450, 온보딩 1-4 안내 180:7319, 1-6 안내 알약 180:7357, 1-8 보호자 메뉴 안내 180:7403,
 // 1-3 미리 보기 180:7300, 1-2a 약관 내용 180:7464
 
 import type { ReactNode } from "react";
@@ -78,6 +78,20 @@ export function PendingWordNotice({ spoken, onSpeak, playing }: { spoken: string
         <p className="type-moya-label whitespace-nowrap text-text-strong">물어볼 단어 상자에 넣었어</p>
         <SoundChip spoken={spoken} onSpeak={onSpeak} playing={playing} />
       </div>
+    </div>
+  );
+}
+
+// E-2 보호자 안내 (180:8450): 아주 연한 보라, 모서리 20, 굵은 제목 + 단계 글
+export function GuideBox({ title, steps }: { title: string; steps: string[] }) {
+  return (
+    <div className="flex w-full flex-col items-start gap-1.5 rounded-[20px] bg-brand-faint px-[18px] py-3.5 whitespace-nowrap">
+      <p className="type-body-bold text-text-strong">{title}</p>
+      {steps.map((step) => (
+        <p key={step} className="type-body-small text-text-normal">
+          {step}
+        </p>
+      ))}
     </div>
   );
 }
