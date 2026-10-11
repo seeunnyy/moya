@@ -61,10 +61,11 @@ export function BottomPanel({ children, tight = false }: { children: ReactNode; 
 }
 
 // 둥근 아이콘 칸 (라벤더 원 + 가운데 아이콘): 30/18(1-6 안내), 32/18(1-4 안내), 44/24(1-8 보호자 메뉴),
-// 72/38(1-5 잠금), 80/42(5-1 잠금). 틀림은 베타 배경색 (5-1a)
+// 40/22(3-4 보호자 메뉴), 72/38(1-5 잠금), 80/42(5-1 잠금). 틀림은 베타 배경색 (5-1a)
 const ICON_CIRCLE = {
   30: { box: "size-[30px]", icon: 18 },
   32: { box: "size-8", icon: 18 },
+  40: { box: "size-10", icon: 22 }, // 3-4 보호자 메뉴
   44: { box: "size-11", icon: 24 },
   48: { box: "size-12", icon: 26 }, // 2-0 미션 마이크
   72: { box: "size-[72px]", icon: 38 },

@@ -1,9 +1,10 @@
-// 안내 상자들: 2-8 물어볼 단어 180:6941, E-2 보호자 안내 180:8450, 온보딩 1-4 안내 180:7319, 1-6 안내 알약 180:7357, 1-8 보호자 메뉴 안내 180:7403,
+// 안내 상자들: 2-8 물어볼 단어 180:6941, 3-1 복습 배너 180:7752, E-2 보호자 안내 180:8450, 온보딩 1-4 안내 180:7319, 1-6 안내 알약 180:7357, 1-8 보호자 메뉴 안내 180:7403,
 // 1-3 미리 보기 180:7300, 1-2a 약관 내용 180:7464
 
 import type { ReactNode } from "react";
 import { Img } from "./Img";
 import { IconCircle } from "./bars";
+import { BetaBadge } from "./buttons";
 import { SoundChip } from "./cards";
 import { MoyaImage } from "./Moya";
 
@@ -92,6 +93,20 @@ export function GuideBox({ title, steps }: { title: string; steps: string[] }) {
           {step}
         </p>
       ))}
+    </div>
+  );
+}
+
+// 3-1 복습 배너 (베타): 아주 연한 보라 알약, 흰 원 34 + 종 20, 글, 베타 배지, 오른쪽 화살표 18. 보이기만 하고 눌러도 동작하지 않는다 (T2)
+export function ReviewBanner({ text }: { text: string }) {
+  return (
+    <div aria-disabled="true" className="flex w-full items-center gap-2.5 rounded-full bg-brand-faint py-2.5 pr-3.5 pl-2.5">
+      <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-white">
+        <Img src="/icons/bell.svg" size={20} />
+      </span>
+      <span className="min-w-px flex-1 type-moya-label text-text-strong">{text}</span>
+      <BetaBadge />
+      <Img src="/icons/chevron-right.svg" size={18} />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   readPin,
   readProfile,
   readStars,
+  readToday,
 } from "../src/lib/storage/index.ts";
 
 function fakeStore(initial: Record<string, string> = {}) {
@@ -71,6 +72,10 @@ test("피그마 상태: 지구 사전 6장(상태 셋), 별 24, 연속 3일, 오
   assert.equal(starTotal(readStars(store)), 24);
   assert.equal(streakDays(readMission(store).stampDates, now), 3);
   assert.equal(missionStars(readMission(store), now), 0);
+  // 피그마 3-2 편의점 별 2, 3-2c 나비 별 1
+  assert.equal(cards.find((c) => c.word === "편의점")?.reviewStep, 2);
+  assert.equal(cards.find((c) => c.word === "나비")?.reviewStep, 1);
+  assert.equal(readToday(store)?.wordEntryId, "dalpaengi-1");
 });
 
 test("다른 상태 위에 넣어도 섞이지 않는다", () => {

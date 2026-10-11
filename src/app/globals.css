@@ -65,6 +65,8 @@
   --color-tint-green: #e3f5d6;
   --color-tint-lavender: #eeeaff;
   --color-tint-sky: #e3f0ff;
+  --color-tint-pink: #ffe4ec; /* 3-1 저금통 */
+  --color-stamp-empty: #f1eee6; /* 3-4 지나지 않은 날의 로켓 도장 칸 */
 
   /* 그림자 (피그마 값 그대로) */
   --shadow-app: 0 0 32px 0 rgba(36, 31, 72, 0.08);

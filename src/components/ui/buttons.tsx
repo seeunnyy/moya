@@ -136,10 +136,10 @@ export function KakaoButton({ children, className = "", ...rest }: NativeButton 
   );
 }
 
-// 베타 배지 (180:6674)
+// 베타 배지 (180:6674): 높이 17 (피그마 글자 줄 13 + 위아래 2)
 export function BetaBadge({ className = "" }: { className?: string }) {
   return (
-    <span className={`inline-flex shrink-0 rounded-full bg-beta-bg px-2 py-0.5 text-[11px] leading-normal font-bold text-beta-text ${className}`}>
+    <span className={`inline-flex shrink-0 rounded-full bg-beta-bg px-2 py-0.5 text-[11px] leading-[13px] font-bold text-beta-text ${className}`}>
       베타
     </span>
   );

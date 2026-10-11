@@ -21,6 +21,9 @@ export type WordEntry = {
   reviewed: boolean; // 검수 완료 여부
 };
 
+// 카드 색 (3-1 타일 배경, 3-2 머리띠). 단어마다 정해 둔다 (src/lib/cardView.ts)
+export type CardTint = "yellow" | "lime" | "green" | "lavender" | "sky" | "pink";
+
 // 카드 상태 (3-2 아래 버튼). 반복 학습이 베타라 새로 모은 카드는 모두 new
 export type CardStatus = "new" | "reviewing" | "mastered";
 
@@ -37,7 +40,7 @@ export type WordCard = {
   createdAt: string; // ISO 8601
   status?: CardStatus; // 없으면 new
   nextReviewAt?: string; // 베타
-  reviewStep?: number; // 베타 (1·3·7일)
+  reviewStep?: number; // 복습에서 기억한 횟수 (베타에서 늘어남). 복습 중 카드의 별 1~2개
 };
 
 // 물어볼 단어

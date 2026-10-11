@@ -1,6 +1,7 @@
 // 카드류 (컴포넌트 보드: 후보 카드 180:6725, 맥락 칩 180:6753, 단어 카드 타일 180:6768, 큰 단어 카드 180:6789, 별 진행 180:6704)
 // 글자 타일(2-9)·'내가 말한 소리' 칩(2-10·3-2)도 여기 둔다.
 
+import type { CardTint } from "@/types";
 import type { ReactNode } from "react";
 import { Img } from "./Img";
 import { SpeakerButton } from "./buttons";
@@ -128,16 +129,17 @@ export function ContextChip({
   );
 }
 
-export type CardTint = "yellow" | "lime" | "green" | "lavender" | "sky";
+export type { CardTint };
 const TINT_BG: Record<CardTint, string> = {
   yellow: "bg-tint-yellow",
   lime: "bg-tint-lime",
   green: "bg-tint-green",
   lavender: "bg-tint-lavender",
   sky: "bg-tint-sky",
+  pink: "bg-tint-pink",
 };
 
-// 단어 카드 타일 (3-1 지구 사전): 상태 새 단어(NEW)·복습 중(별 1)·다 앎(별 3 + 도장). 색은 단어마다
+// 단어 카드 타일 (3-1 지구 사전): 상태 새 단어(NEW)·복습 중(별 1~2)·다 앎(별 3 + 도장). 색은 단어마다. 피그마 3-1처럼 그림자 없음
 export function WordTile({
   word,
   image,
@@ -163,7 +165,7 @@ export function WordTile({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex flex-col items-center gap-1.5 rounded-3xl border-[3px] border-white pt-3.5 pb-4 drop-shadow-tile ${TINT_BG[tint]} ${className}`}
+      className={`relative flex flex-col items-center gap-1.5 rounded-3xl border-[3px] border-white pt-3.5 pb-4 ${TINT_BG[tint]} ${className}`}
     >
       <Img src={image} size={imageSize} />
       <span className="type-moya-title-m whitespace-nowrap text-text-strong">{word}</span>

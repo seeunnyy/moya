@@ -1,6 +1,7 @@
-import { KidSkeleton } from "@/components/ScreenSkeleton";
+import { DictionaryCardScreen } from "@/components/DictionaryCardScreen";
 
-// /app/dictionary/[cardId] — 3-2 ~ 3-2e 카드 상세. 없는 id면 3-1로 (그룹 8, T15)
-export default function Page() {
-  return <KidSkeleton code="3-2" name="카드 상세" group={8} tab="words" links={[{ label: "지구 사전", href: "/app/dictionary" }]} />;
+// /app/dictionary/[cardId] — 3-2 카드 상세 (3-2a~3-2e는 카드 상태·단어만 다름). 없는 id면 3-1로 (T15)
+export default async function Page(props: PageProps<"/app/dictionary/[cardId]">) {
+  const { cardId } = await props.params;
+  return <DictionaryCardScreen cardId={cardId} />;
 }

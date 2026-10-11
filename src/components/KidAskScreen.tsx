@@ -18,8 +18,9 @@ import { MOCK_WORDS } from "@/data/words.mock";
 import type { HeardContext } from "@/types";
 import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
 import { MISSION_SUCCESS_DELAY_MS } from "@/lib/config";
-import { addPendingOnce, collectAskedCard, STARS_PER_MISSION } from "@/lib/progress";
+import { addPendingOnce, collectAskedCard, pickTodayWord, STARS_PER_MISSION } from "@/lib/progress";
 import { createRecognizer, listenLimitMs } from "@/lib/services/recognize";
+import { newId } from "@/lib/id";
 import { speaker } from "@/lib/services/speech";
 import {
   readCards,
@@ -27,6 +28,7 @@ import {
   readPending,
   readStars,
   readTaught,
+  readToday,
   writeCards,
   writeMission,
   writePending,
@@ -45,11 +47,6 @@ import { TextFallback } from "./ui/TextFallback";
 import { Button, CircleButton } from "./ui/buttons";
 import { CandidateCard, ContextChip, LetterTiles, WordCardDetailed, WordCardSimple } from "./ui/cards";
 import { GuideBox, PendingWordNotice } from "./ui/notices";
-
-// crypto.randomUUID는 http(휴대폰에서 개발 서버 접속)에서 없을 수 있어 직접 만든다.
-function newId() {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 // 카드 날짜 "10월 8일"
 function cardDate(iso: string | undefined): string {
@@ -127,6 +124,9 @@ type Playing = "bubble" | "card" | "spoken" | null;
 export function KidAskScreen() {
   const router = useRouter();
   const cards = useStored(readCards);
+  // 2-1 오늘의 단어 선물: 고를 단어가 없으면 숨기고, 오늘 아직 안 열어 봤으면 새 표시
+  const savedToday = useStored(readToday);
+  const todayWord = cards && savedToday !== undefined ? pickTodayWord(MOCK_WORDS, cards, savedToday, new Date()) : undefined;
   const taught = useStored(readTaught);
 
   // 보호자가 알려 준 연결이 바뀌면 reducer를 다시 만든다 (askFlow 옵션)
@@ -354,10 +354,11 @@ export function KidAskScreen() {
               <div className="relative -mx-6 flex justify-center self-stretch">
                 <MoyaStage expression="explain" />
                 <Sparkle className="top-[54px] left-[30px]" />
-                {/* 3-3 오늘의 단어 화면은 그룹 8. 지금은 모양만 */}
-                <span className="absolute top-[84px] right-3">
-                  <GiftButton hasNew />
-                </span>
+                {todayWord !== null && (
+                  <span className="absolute top-[84px] right-3">
+                    <GiftButton hasNew={!!todayWord && !todayWord.opened} onClick={() => router.push("/app/today")} />
+                  </span>
+                )}
               </div>
               <MicArea state="idle" onPress={() => void startListening()} />
             </>

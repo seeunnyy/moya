@@ -19,6 +19,7 @@ import {
   writeProfile,
   writeSettings,
   writeStars,
+  writeToday,
   type KeyValueStore,
   type Mission,
   type StarRecord,
@@ -61,7 +62,7 @@ export const SEED_PRESETS: { key: SeedPreset; label: string; description: string
   {
     key: "figma",
     label: "피그마 화면 상태",
-    description: "지구 사전 6장(새 카드·복습 중·다 앎), 별 24개, 연속 3일. 피그마와 겹쳐 볼 때.",
+    description: "지구 사전 6장(새 카드·복습 중·다 앎), 별 24개, 연속 3일, 오늘의 단어 달팽이. 피그마 ③과 겹쳐 볼 때.",
     goTo: "/app/dictionary",
   },
 ];
@@ -104,15 +105,16 @@ function writeProgress(store: SeedStore, p: Progress) {
 
 // 피그마 3-1의 6장. '내가 말한 소리'는 피그마 카드에 있는 것(저굼통·우싼·펴니점)만 넣고 나머지는 단어 그대로.
 function figmaProgress(now: Date): Progress {
-  const cardSpec: [word: string, spokenAs: string, status: CardStatus, daysBefore: number][] = [
-    ["씨앗", "씨앗", "mastered", 9],
-    ["무지개", "무지개", "mastered", 8],
-    ["나비", "나비", "reviewing", 5],
-    ["편의점", "펴니점", "reviewing", 3],
+  // 기억한 횟수: 피그마 3-2 편의점 별 2, 3-2c 나비 별 1
+  const cardSpec: [word: string, spokenAs: string, status: CardStatus, daysBefore: number, reviewStep?: number][] = [
+    ["씨앗", "씨앗", "mastered", 9, 3],
+    ["무지개", "무지개", "mastered", 8, 3],
+    ["나비", "나비", "reviewing", 5, 1],
+    ["편의점", "펴니점", "reviewing", 3, 2],
     ["우산", "우싼", "new", 2],
     ["저금통", "저굼통", "new", 1],
   ];
-  const cards: WordCard[] = cardSpec.map(([word, spokenAs, status, d], i) => {
+  const cards: WordCard[] = cardSpec.map(([word, spokenAs, status, d, reviewStep], i) => {
     const e = entry(word);
     return {
       id: `seed-${i + 1}`,
@@ -124,6 +126,7 @@ function figmaProgress(now: Date): Progress {
       spokenAs,
       createdAt: daysAgo(now, d).toISOString(),
       status,
+      ...(reviewStep ? { reviewStep } : {}),
     };
   });
   // 연속 3일(어제까지) + 그 전 끊긴 3일. 별: 카드 6 + 미션 6번 × 3 = 24
@@ -169,5 +172,9 @@ export function applySeed(preset: SeedPreset, store: SeedStore, now: Date = new 
   if (preset === "beforeMission") writeProgress(store, askedToday(now, [["편의점", "펴니점"], ["나비", "나비"]]));
   if (preset === "cards3")
     writeProgress(store, askedToday(now, [["저금통", "저굼통"], ["저울", "저욷"], ["조금", "조굼"]]));
-  if (preset === "figma") writeProgress(store, figmaProgress(now));
+  if (preset === "figma") {
+    writeProgress(store, figmaProgress(now));
+    // 피그마 3-3 오늘의 단어 '달팽이' (아직 열지 않음 → 2-1 선물에 새 표시)
+    writeToday({ date: localDateKey(now), wordEntryId: entry("달팽이").id, opened: false, added: false }, store);
+  }
 }
