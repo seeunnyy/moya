@@ -30,7 +30,7 @@ export const SEED_EMAIL = "parent@moya.test";
 export const SEED_PIN = "1234";
 export const SEED_NICKNAME = "지우";
 
-export type SeedPreset = "reset" | "signedUp" | "beforeMission" | "cards3" | "figma";
+export type SeedPreset = "reset" | "signedUp" | "askFigma" | "beforeMission" | "cards3" | "figma";
 
 export const SEED_PRESETS: { key: SeedPreset; label: string; description: string; goTo: string }[] = [
   { key: "reset", label: "처음 상태로 되돌리기", description: "모든 기록을 지워요. 시작(1-1)부터 봐요.", goTo: "/" },
@@ -38,6 +38,12 @@ export const SEED_PRESETS: { key: SeedPreset; label: string; description: string
     key: "signedUp",
     label: "가입 끝난 상태로 홈 보기",
     description: "가입·프로필·동의·비밀번호만 있고 카드·별은 0이에요.",
+    goTo: "/app",
+  },
+  {
+    key: "askFigma",
+    label: "묻기 시연 (피그마 ② 상태)",
+    description: "별 24개·오늘의 미션 1/3, 저금통·저울·조금·우산은 아직 없어요. 2-1~2-10을 피그마와 겹쳐 볼 때.",
     goTo: "/app",
   },
   {
@@ -135,11 +141,31 @@ function figmaProgress(now: Date): Progress {
   return { cards, stars, mission };
 }
 
+// 피그마 2-1~2-10 헤더(별 24 · 미션 1/3, 저금통을 모으면 25 · 2/3).
+// 지난 카드 씨앗·무지개 + 오늘 나비(미션 1) = 별 3, 로켓 도장 7번 × 3 = 21. 연속은 어제까지 3일
+function askFigmaProgress(now: Date): Progress {
+  let progress: Progress = { cards: [], stars: [], mission: EMPTY_MISSION };
+  ([["씨앗", 9], ["무지개", 8], ["나비", 0]] as const).forEach(([word, d], i) => {
+    const at = d === 0 ? new Date(now.getTime() - 60_000) : daysAgo(now, d);
+    progress = collectAskedCard(progress, { entry: entry(word), spokenAs: word, now: at, id: `seed-${i + 1}` });
+  });
+  const stampDays = [1, 2, 3, 5, 6, 7, 8];
+  return {
+    cards: progress.cards,
+    stars: [
+      ...progress.stars,
+      ...stampDays.map((d) => ({ reason: "mission" as const, amount: 3, at: daysAgo(now, d, 18).toISOString() })),
+    ],
+    mission: { ...progress.mission, stampDates: stampDays.map((d) => localDateKey(daysAgo(now, d))) },
+  };
+}
+
 // 고른 상태를 넣는다. 다른 상태 위에 넣어도 섞이지 않게 먼저 모두 지운다.
 export function applySeed(preset: SeedPreset, store: SeedStore, now: Date = new Date()): void {
   for (const key of ALL_KEYS) store.removeItem(key);
   if (preset === "reset") return;
   writeSignedUp(store, now);
+  if (preset === "askFigma") writeProgress(store, askFigmaProgress(now));
   if (preset === "beforeMission") writeProgress(store, askedToday(now, [["편의점", "펴니점"], ["나비", "나비"]]));
   if (preset === "cards3")
     writeProgress(store, askedToday(now, [["저금통", "저굼통"], ["저울", "저욷"], ["조금", "조굼"]]));

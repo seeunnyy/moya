@@ -76,3 +76,30 @@ test("빈 문장은 읽지 않고, speak가 예외를 던져도 false로 끝난�
   const broken = { ...env, speechSynthesis: { ...env.speechSynthesis!, speak: () => { throw new Error("x"); } } };
   assert.equal(createSpeaker(() => broken).speak("공룡"), false);
 });
+
+test("끝 알림은 지금 읽는 말에만 온다 (다음 말·stop으로 끊긴 말은 알리지 않음)", () => {
+  const utterances: { onend?: () => void; onerror?: () => void }[] = [];
+  class Utterance {
+    lang = "";
+    onend?: () => void;
+    onerror?: () => void;
+    constructor() {
+      utterances.push(this);
+    }
+  }
+  const env = {
+    speechSynthesis: { speak: () => {}, cancel: () => {}, getVoices: () => [] },
+    SpeechSynthesisUtterance: Utterance,
+  } as unknown as SpeechEnv;
+  const s = createSpeaker(() => env);
+  const ended: string[] = [];
+  s.speak("첫 번째", () => ended.push("1"));
+  s.speak("두 번째", () => ended.push("2"));
+  utterances[0].onerror?.(); // 끊긴 첫 말
+  utterances[1].onend?.();
+  assert.deepEqual(ended, ["2"]);
+  s.speak("세 번째", () => ended.push("3"));
+  s.stop();
+  utterances[2].onend?.();
+  assert.deepEqual(ended, ["2"]);
+});

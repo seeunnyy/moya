@@ -1,7 +1,8 @@
 // 모야 그림·무대 (모야 표정 180:6098, 2-1 '모야 무대' 180:6824, '오늘의 단어 버튼' 180:6836)
 
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import type { ButtonHTMLAttributes } from "react";
+import { preload } from "react-dom";
 import { FillImg, Img } from "./Img";
 
 // 표정 심볼 이름: 인사·설명·궁금·당황·신남. 화면의 심볼은 투명판(clear)을 쓴다
@@ -22,17 +23,25 @@ export function MoyaImage({
 }) {
   return (
     <Image
-      src={`/moya/moya-${expression}-${background}.png`}
+      {...moyaProps(expression, size, background)}
       alt=""
-      width={size}
-      height={size}
-      sizes={`${size}px`}
-      priority={priority}
+      preload={priority}
       className={`shrink-0 object-contain ${className}`}
       style={{ width: size, height: size }}
       draggable={false}
     />
   );
+}
+
+function moyaProps(expression: MoyaExpression, size: number, background: "clear" | "cream") {
+  return { src: `/moya/moya-${expression}-${background}.png`, width: size, height: size, sizes: `${size}px` };
+}
+
+// 다음 화면의 모야 그림을 미리 받아 둔다 (그림이 커서 화면이 바뀐 뒤 늦게 뜨지 않게). 화면을 그릴 때 부른다.
+// 화면의 <Image>와 같은 srcset으로 받아야 브라우저가 같은 파일로 알아본다.
+export function preloadMoya(expression: MoyaExpression, size: number, background: "clear" | "cream" = "clear") {
+  const { props } = getImageProps({ ...moyaProps(expression, size, background), alt: "" });
+  preload(props.src, { as: "image", imageSrcSet: props.srcSet, imageSizes: props.sizes });
 }
 
 // 모야 무대: 뒤 빛(300) + 바닥 그림자(170×24) + 모야(290). 2-1 홈 기준 위치
@@ -73,5 +82,36 @@ export function GiftButton({
         </span>
       )}
     </button>
+  );
+}
+
+// 소리 물결 30×44 (2-2 180:6846·180:6852). 그림 26.5×43을 피그마 inset 그대로 놓고, 왼쪽은 좌우 뒤집는다
+function SoundWave({ side }: { side: "left" | "right" }) {
+  return (
+    <span className="relative h-11 w-[30px] shrink-0 overflow-clip">
+      <span className={`absolute top-[0.5px] h-[43px] w-[26.5px] ${side === "left" ? "left-px -scale-x-100" : "left-[2.5px]"}`}>
+        <FillImg src="/ui/sound-wave.svg" className="inset-0" />
+      </span>
+    </span>
+  );
+}
+
+// 듣는 중 모야 (2-2 '모야 + 소리 물결' 180:6845): 물결 + 모야 270 + 물결
+export function MoyaListening() {
+  return (
+    <div className="flex items-center" aria-hidden="true">
+      <SoundWave side="left" />
+      <MoyaImage expression="curious" background="cream" size={270} />
+      <SoundWave side="right" />
+    </div>
+  );
+}
+
+// 반짝이 18 (2-1 180:6834)
+export function Sparkle({ className = "" }: { className?: string }) {
+  return (
+    <span className={`pointer-events-none absolute ${className}`} aria-hidden="true">
+      <Img src="/ui/sparkle.svg" size={18} />
+    </span>
   );
 }

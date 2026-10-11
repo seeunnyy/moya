@@ -9,7 +9,8 @@ export type SpeechEnv = {
 
 export type Speaker = {
   supported(): boolean;
-  speak(text: string): boolean; // 읽기 시작했으면 true
+  // 읽기 시작했으면 true. onEnd는 이 말이 끝나거나 실패했을 때 한 번 (다음 말에 끊기면 부르지 않는다) — 스피커 '재생 중' 표시용
+  speak(text: string, onEnd?: () => void): boolean;
   stop(): void;
 };
 
@@ -28,21 +29,31 @@ export function createSpeaker(getEnv: () => SpeechEnv | undefined): Speaker {
     return !!env?.speechSynthesis && !!env.SpeechSynthesisUtterance;
   }
 
+  let current = 0; // 지금 읽는 말의 번호. 끊긴 말의 끝 알림은 버린다
+
   return {
     supported() {
       const env = getEnv();
       return usable(env) && koreanVoice(env) !== "none";
     },
 
-    speak(text) {
+    speak(text, onEnd) {
       const env = getEnv();
       if (!usable(env) || !text.trim()) return false;
       const voice = koreanVoice(env);
       if (voice === "none") return false;
       try {
         env.speechSynthesis.cancel(); // 읽던 말은 끊고 새 말을 처음부터
+        const id = ++current;
         const utterance = new env.SpeechSynthesisUtterance(text);
         utterance.lang = LANG;
+        if (onEnd) {
+          const done = () => {
+            if (id === current) onEnd();
+          };
+          utterance.onend = done;
+          utterance.onerror = done;
+        }
         if (voice) utterance.voice = voice;
         env.speechSynthesis.speak(utterance);
         return true;
@@ -52,6 +63,7 @@ export function createSpeaker(getEnv: () => SpeechEnv | undefined): Speaker {
     },
 
     stop() {
+      current += 1;
       const env = getEnv();
       try {
         env?.speechSynthesis?.cancel();

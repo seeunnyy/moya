@@ -2,7 +2,7 @@
 // 그림은 버튼 틀(118×116.703)보다 넓어서(빛 테두리) 피그마의 inset 비율 그대로 틀 밖으로 늘린다.
 
 import type { ButtonHTMLAttributes } from "react";
-import { FillImg } from "./Img";
+import { FillImg, Img } from "./Img";
 
 export type MicState = "idle" | "listening" | "disabled";
 
@@ -32,5 +32,26 @@ export function MicButton({ state = "idle", label, className = "", ...rest }: Pr
       )}
       {state === "disabled" && <FillImg src="/mic/mic-disabled.svg" className="inset-0" />}
     </button>
+  );
+}
+
+// 말하기 영역 (2-1 180:6829, 2-2 180:6858, 2-3 180:6870): 마이크 + 아래 글자 줄 (간격 13, 모야/제목 M)
+// 기본 "눌러서 말하기"(진함) · 듣는 중 "듣고 있어…"(진보라) · 생각 중 "모야가 찾고 있어"(흐림) + 점 37×9
+const MIC_AREA = {
+  idle: { mic: "idle", text: "눌러서 말하기", color: "text-text-strong", label: "눌러서 말하기" },
+  listening: { mic: "listening", text: "듣고 있어…", color: "text-brand-deep", label: "그만 말하기" },
+  thinking: { mic: "disabled", text: "모야가 찾고 있어", color: "text-text-faint", label: "모야가 찾고 있어요" },
+} as const;
+
+export function MicArea({ state, onPress }: { state: keyof typeof MIC_AREA; onPress?: () => void }) {
+  const a = MIC_AREA[state];
+  return (
+    <div className="flex flex-col items-center gap-[13px]">
+      <MicButton state={a.mic} label={a.label} onClick={onPress} />
+      <p className="flex items-center gap-2" aria-live="polite">
+        <span className={`type-moya-title-m whitespace-nowrap ${a.color}`}>{a.text}</span>
+        {state === "thinking" && <Img src="/ui/thinking-dots.svg" width={37} height={9} />}
+      </p>
+    </div>
   );
 }

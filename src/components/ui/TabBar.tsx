@@ -27,8 +27,10 @@ export function TabBar({
   selected,
   hrefs,
   disabled = [],
+  onSelect,
 }: {
   selected: TabKey;
+  onSelect?: (key: TabKey) => void; // 같은 주소의 탭을 다시 눌러도 알 수 있게 (2-2~2-10에서 [모야와 놀기] → 2-1)
   hrefs?: Partial<Record<TabKey, string>>; // 기본값은 design.md "화면 ↔ 주소" 표 (그룹 3에서 확정)
   disabled?: TabKey[];
 }) {
@@ -77,6 +79,7 @@ export function TabBar({
                 <Link
                   href={hrefs?.[t.key] ?? t.href}
                   aria-current={isSelected ? "page" : undefined}
+                  onClick={() => onSelect?.(t.key)}
                   className="group flex flex-col items-center gap-1 touch-target"
                 >
                   {body}

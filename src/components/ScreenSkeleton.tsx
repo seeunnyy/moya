@@ -23,7 +23,7 @@ type Body = {
   children?: ReactNode;
 };
 
-function SkeletonBody({ code, name, group, links = [], children }: Body) {
+export function SkeletonBody({ code, name, group, links = [], children }: Body) {
   const router = useRouter();
   return (
     <main className="flex flex-1 flex-col items-center gap-3 px-6 py-10 text-center">

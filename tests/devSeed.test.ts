@@ -85,3 +85,13 @@ test("모든 시드 버튼에 이름·설명·이동할 주소가 있다", () =>
     assert.ok(p.label && p.description && p.goTo.startsWith("/"), p.key);
   }
 });
+
+test("묻기 시연 시드: 피그마 2-1 헤더(별 24 · 미션 1/3), 시연 단어는 아직 없음", () => {
+  const { store } = fakeStore();
+  applySeed("askFigma", store, now);
+  assert.equal(starTotal(readStars(store)), 24);
+  assert.equal(missionStars(readMission(store), now), 1);
+  const words = readCards(store).map((c) => c.word);
+  for (const w of ["저금통", "저울", "조금", "우산"]) assert.equal(words.includes(w), false);
+  assert.equal(streakDays(readMission(store).stampDates, now), 3);
+});
