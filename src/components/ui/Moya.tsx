@@ -107,11 +107,21 @@ export function MoyaListening() {
   );
 }
 
-// 반짝이 18 (2-1 180:6834)
-export function Sparkle({ className = "" }: { className?: string }) {
+// 반짝이 (2-1 180:6834, 1-1 180:7227~7231, 1-8 180:7410·180:7412). 같은 모양, 색 3가지 × 크기
+const SPARKLE_COLOR = { yellow: "/ui/sparkle.svg", purple: "/ui/sparkle-purple.svg", pink: "/ui/sparkle-pink.svg" } as const;
+
+export function Sparkle({
+  size = 18,
+  color = "yellow",
+  className = "",
+}: {
+  size?: number;
+  color?: keyof typeof SPARKLE_COLOR;
+  className?: string;
+}) {
   return (
     <span className={`pointer-events-none absolute ${className}`} aria-hidden="true">
-      <Img src="/ui/sparkle.svg" size={18} />
+      <Img src={SPARKLE_COLOR[color]} size={size} />
     </span>
   );
 }

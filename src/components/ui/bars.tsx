@@ -51,28 +51,38 @@ export function TopBar({
 }
 
 // 하단 패널: 흰 바탕, 위 모서리 28, 버튼 영역 (pb 42 또는 기기 안전 영역)
-export function BottomPanel({ children }: { children: ReactNode }) {
+// 위 여백 20, 키패드가 들어가는 1-5·5-1은 18
+export function BottomPanel({ children, tight = false }: { children: ReactNode; tight?: boolean }) {
   return (
-    <div className="flex w-full flex-col items-center gap-3 rounded-t-[28px] bg-white px-6 pt-5 pb-[max(42px,env(safe-area-inset-bottom))] shadow-tabbar">
+    <div className={`flex w-full flex-col items-center gap-3 rounded-t-[28px] bg-white px-6 pb-[max(42px,env(safe-area-inset-bottom))] shadow-tabbar ${tight ? "pt-[18px]" : "pt-5"}`}>
       {children}
     </div>
   );
 }
 
-// 둥근 아이콘 칸: 잠금(1-5: 72/38, 5-1: 80/42), 틀림은 베타 배경색 (5-1a)
+// 둥근 아이콘 칸 (라벤더 원 + 가운데 아이콘): 30/18(1-6 안내), 32/18(1-4 안내), 44/24(1-8 보호자 메뉴),
+// 72/38(1-5 잠금), 80/42(5-1 잠금). 틀림은 베타 배경색 (5-1a)
+const ICON_CIRCLE = {
+  30: { box: "size-[30px]", icon: 18 },
+  32: { box: "size-8", icon: 18 },
+  44: { box: "size-11", icon: 24 },
+  72: { box: "size-[72px]", icon: 38 },
+  80: { box: "size-20", icon: 42 },
+} as const;
+
 export function IconCircle({
   icon = "/icons/lock.svg",
   size = 72,
   tone = "lavender",
 }: {
   icon?: string;
-  size?: 72 | 80;
+  size?: keyof typeof ICON_CIRCLE;
   tone?: "lavender" | "danger";
 }) {
-  const box = size === 72 ? "size-[72px] rounded-[36px]" : "size-20 rounded-[40px]";
+  const c = ICON_CIRCLE[size];
   return (
-    <span className={`flex items-center justify-center ${box} ${tone === "danger" ? "bg-beta-bg" : "bg-brand-lavender"}`}>
-      <Img src={icon} size={size === 72 ? 38 : 42} />
+    <span className={`flex shrink-0 items-center justify-center rounded-full ${c.box} ${tone === "danger" ? "bg-beta-bg" : "bg-brand-lavender"}`}>
+      <Img src={icon} size={c.icon} />
     </span>
   );
 }

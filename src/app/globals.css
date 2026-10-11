@@ -52,6 +52,7 @@
   --color-tile-shadow: #eadfc6; /* 단어 카드 타일 그림자 */
   --color-sheet-handle: #d9d3e6; /* 바텀 시트 손잡이 */
   --color-dim: rgba(36, 31, 72, 0.45); /* 시트·확인 창 뒤 어두운 배경 */
+  --color-dim-system: rgba(0, 0, 0, 0.4); /* 1-7 브라우저 마이크 권한 창 뒤 (180:7385) */
   --color-kakao: #fee500; /* 카카오 버튼 */
   --color-kakao-text: #191919;
   /* PC 화면(폭 403px 이상)에서만: 앱 칸 바깥 배경과 앱 칸 그림자. 피그마에 없음 (design.md Open Questions) */

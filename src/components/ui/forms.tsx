@@ -3,13 +3,14 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { FillImg, Img } from "./Img";
 
-// 입력칸: 라벨(캡션) + 54px 칸
+// 입력칸: 라벨(캡션) + 54px 칸. error가 있으면 칸 아래 코랄 캡션 (피그마에 없음, PM 확인 2026-10-11)
 export function TextField({
   label,
   id,
+  error,
   className = "",
   ...rest
-}: InputHTMLAttributes<HTMLInputElement> & { label: string; id: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { label: string; id: string; error?: string }) {
   return (
     <div className={`flex w-full flex-col items-start gap-1.5 ${className}`}>
       <label htmlFor={id} className="type-caption text-text-normal">
@@ -17,10 +18,22 @@ export function TextField({
       </label>
       <input
         id={id}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
         className="h-[54px] w-full rounded-2xl border-2 border-line-lavender bg-white px-4 font-sans text-base leading-[1.55] text-text-strong placeholder:text-text-faint"
         {...rest}
       />
+      {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
     </div>
+  );
+}
+
+// 입력 오류 안내: 코랄 캡션 (1-0·1-2·1-3·1-4·1-5a, 피그마에 없음 → PM 확인 2026-10-11)
+export function FieldError({ id, children, className = "" }: { id?: string; children: ReactNode; className?: string }) {
+  return (
+    <p id={id} role="alert" className={`type-caption text-coral ${className}`}>
+      {children}
+    </p>
   );
 }
 
@@ -68,7 +81,8 @@ export function TermsRow({
     <div className="flex w-full items-center gap-2.5">
       <Checkbox checked={checked} onChange={onChange} label={`[${tag}] ${text}`} />
       <p className="min-w-px flex-1 text-sm leading-normal text-text-strong">
-        <span className="font-bold text-brand-deep">[{tag}]</span> {text}
+        {/* [필수]는 진보라, [선택]은 흐림 (1-4 180:7339) */}
+        <span className={`font-bold ${tag === "필수" ? "text-brand-deep" : "text-text-faint"}`}>[{tag}]</span> {text}
       </p>
       {onOpen && (
         <button type="button" onClick={onOpen} aria-label={`${text} 약관 보기`} className="relative touch-target">
@@ -96,14 +110,24 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: (next: 
 }
 
 // 나이 칩 80×52: 선택(보라)·기본(흰)
-export function AgeChip({ age, selected, onSelect }: { age: number; selected: boolean; onSelect: () => void }) {
+export function AgeChip({
+  age,
+  selected,
+  onSelect,
+  className = "w-20",
+}: {
+  age: number;
+  selected: boolean;
+  onSelect: () => void;
+  className?: string;
+}) {
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
       onClick={onSelect}
-      className={`flex h-[52px] w-20 items-center justify-center rounded-2xl type-moya-button whitespace-nowrap ${
+      className={`flex h-[52px] items-center justify-center rounded-2xl type-moya-button whitespace-nowrap ${className} ${
         selected
           ? "bg-brand text-white drop-shadow-primary-sm"
           : "border-2 border-bubble-line bg-white text-text-strong drop-shadow-beige"
@@ -116,9 +140,10 @@ export function AgeChip({ age, selected, onSelect }: { age: number; selected: bo
 
 export function AgeChips({ value, onChange }: { value: number | null; onChange: (age: number) => void }) {
   return (
-    <div role="radiogroup" aria-label="나이 (만)" className="flex w-full justify-between">
+    // 1-3 나이 선택 180:7295: 칩은 남은 폭을 똑같이 나눠 가짐(402px에서 81), 간격 10
+    <div role="radiogroup" aria-label="나이 (만)" className="flex w-full gap-2.5">
       {[5, 6, 7, 8].map((age) => (
-        <AgeChip key={age} age={age} selected={value === age} onSelect={() => onChange(age)} />
+        <AgeChip key={age} age={age} selected={value === age} onSelect={() => onChange(age)} className="min-w-px flex-1" />
       ))}
     </div>
   );

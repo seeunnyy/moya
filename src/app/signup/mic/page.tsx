@@ -1,6 +1,6 @@
-import { OnboardingSkeleton } from "@/components/ScreenSkeleton";
+import { MicIntroScreen } from "@/components/OnboardingScreens";
 
-// /signup/mic — 1-6 마이크 권한 안내 (180:7345). 1-7은 브라우저 권한 창
+// /signup/mic — 1-6 마이크 권한 안내 (180:7345). 1-7은 브라우저의 진짜 권한 창 (뒤만 어둡게)
 export default function Page() {
-  return <OnboardingSkeleton code="1-6" name="마이크 권한 안내" group={9} links={[{ label: "나중에 할게요", href: "/signup/done" }]} />;
+  return <MicIntroScreen />;
 }

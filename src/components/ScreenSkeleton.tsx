@@ -72,16 +72,6 @@ export function KidSkeleton({ tab, children, ...body }: Body & { tab?: TabKey })
   );
 }
 
-export function OnboardingSkeleton({ back = true, ...body }: Body & { back?: boolean }) {
-  const router = useRouter();
-  return (
-    <>
-      <TopBar left={back ? "back" : undefined} onLeft={() => router.back()} />
-      <SkeletonBody {...body} />
-    </>
-  );
-}
-
 export function ParentSkeleton({
   left = "back",
   onLeft,
