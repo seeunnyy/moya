@@ -1,8 +1,10 @@
-// 안내 상자들 (온보딩): 1-4 안내 180:7319, 1-6 안내 알약 180:7357, 1-8 보호자 메뉴 안내 180:7403,
+// 안내 상자들: 2-8 물어볼 단어 180:6941, 온보딩 1-4 안내 180:7319, 1-6 안내 알약 180:7357, 1-8 보호자 메뉴 안내 180:7403,
 // 1-3 미리 보기 180:7300, 1-2a 약관 내용 180:7464
 
 import type { ReactNode } from "react";
+import { Img } from "./Img";
 import { IconCircle } from "./bars";
+import { SoundChip } from "./cards";
 import { MoyaImage } from "./Moya";
 
 // 1-4: 흰 상자(모서리 22, 베이지 테두리) 안에 아이콘 32 + 본문 줄들 (간격 14)
@@ -62,6 +64,20 @@ export function TermsDoc({ sections }: { sections: { title: string; body: string
           <p className="type-body-small text-text-normal">{sec.body}</p>
         </section>
       ))}
+    </div>
+  );
+}
+
+// 2-8 물어볼 단어 안내 (180:6941): 그림 60 + "물어볼 단어 상자에 넣었어" + 내가 말한 소리 칩
+export function PendingWordNotice({ spoken, onSpeak, playing }: { spoken: string; onSpeak?: () => void; playing?: boolean }) {
+  return (
+    <div className="flex w-full items-center gap-3.5 py-3.5 pr-4 pl-3.5">
+      {/* 피그마는 120 그림을 60으로 줄여도 선 굵기(4·3.5)를 그대로 둔다 → 선을 두 배로 한 60용 그림 */}
+      <Img src="/words/ask-word-60.svg" size={60} />
+      <div className="flex min-w-px flex-1 flex-col items-start gap-1.5">
+        <p className="type-moya-label whitespace-nowrap text-text-strong">물어볼 단어 상자에 넣었어</p>
+        <SoundChip spoken={spoken} onSpeak={onSpeak} playing={playing} />
+      </div>
     </div>
   );
 }

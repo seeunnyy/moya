@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  addPendingOnce,
   addTodayWordCard,
   collectAskedCard,
   daysWithMoya,
@@ -177,4 +178,16 @@ test("오늘의 단어: 날짜에 따라 다른 단어가 나올 수 있다 (고
     Array.from({ length: 14 }, (_, i) => pickTodayWord(MOCK_WORDS, [], null, new Date(2026, 9, 1 + i))?.wordEntryId),
   );
   assert.ok(picks.size > 1);
+});
+
+test("물어볼 단어: 같은 말은 한 번만 넣는다 (앞뒤 공백 무시, 빈 말은 넣지 않음)", () => {
+  const w = (id: string, spokenAs: string) => ({ id, spokenAs, createdAt: "2026-10-11T00:00:00.000Z" });
+  let r = addPendingOnce([], w("a", " 저구멍 "));
+  assert.equal(r.added, true);
+  assert.equal(r.list[0].spokenAs, "저구멍");
+  r = addPendingOnce(r.list, w("b", "저구멍"));
+  assert.equal(r.added, false);
+  assert.equal(r.list.length, 1);
+  assert.equal(addPendingOnce(r.list, w("c", "뿌잉")).list.length, 2);
+  assert.equal(addPendingOnce([], w("d", "  ")).added, false);
 });

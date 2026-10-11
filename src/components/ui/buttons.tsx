@@ -143,3 +143,16 @@ export function BetaBadge({ className = "" }: { className?: string }) {
     </span>
   );
 }
+
+// 예시 알약 (폴백의 예시 문장, 피그마에 없음 → PM 확인 2026-10-11): 흰 알약 + 베이지 테두리, 모야/라벨 진보라. 누름은 원형 버튼 방식
+export function ExampleChip({ children, className = "", ...rest }: NativeButton & { children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      className={`rounded-full border-2 border-line-beige bg-white px-3.5 py-2 type-moya-label whitespace-nowrap text-brand-deep drop-shadow-beige touch-target active:bg-brand-faint active:drop-shadow-beige-pressed ${className}`}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}

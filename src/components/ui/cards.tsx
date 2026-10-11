@@ -17,13 +17,13 @@ export function StarProgress({ count, label }: { count: number; label?: string }
 }
 
 // '내가 말한 소리' 줄: 라벨 + 라벤더 칩(인식 글자 + 작은 스피커)
-export function SoundChip({ spoken, onSpeak }: { spoken: string; onSpeak?: () => void }) {
+export function SoundChip({ spoken, onSpeak, playing = false }: { spoken: string; onSpeak?: () => void; playing?: boolean }) {
   return (
     <span className="flex items-center gap-2">
       <span className="type-caption whitespace-nowrap text-text-faint">내가 말한 소리</span>
       <span className="flex items-center gap-1.5 rounded-full bg-brand-lavender py-[3px] pr-1.5 pl-3">
         <span className="type-moya-label whitespace-nowrap text-brand-deep">{spoken}</span>
-        <SpeakerButton size={24} onClick={onSpeak} label={`내가 말한 소리 ${spoken} 듣기`} />
+        <SpeakerButton size={24} onClick={onSpeak} playing={playing} label={`내가 말한 소리 ${spoken} 듣기`} />
       </span>
     </span>
   );
@@ -217,6 +217,7 @@ export function WordCardDetailed({
   tint = "lime",
   spoken,
   onSpeakSpoken,
+  playingSpoken = false,
   explanation,
   example,
   stars,
@@ -230,6 +231,7 @@ export function WordCardDetailed({
   tint?: CardTint;
   spoken?: string; // 내가 말한 소리 (기록 삭제 뒤에는 없음)
   onSpeakSpoken?: () => void;
+  playingSpoken?: boolean;
   explanation: string;
   example: string; // 비어 있으면 줄을 숨김
   stars: number;
@@ -249,7 +251,7 @@ export function WordCardDetailed({
       </div>
       <Img src={image} size={120} />
       <p className="type-moya-word whitespace-nowrap text-text-strong">{word}</p>
-      {spoken && <SoundChip spoken={spoken} onSpeak={onSpeakSpoken} />}
+      {spoken && <SoundChip spoken={spoken} onSpeak={onSpeakSpoken} playing={playingSpoken} />}
       <span className="h-0.5 w-[306px] max-w-[calc(100%-44px)] bg-line-beige" />
       <p className="w-[306px] max-w-[calc(100%-44px)] text-center type-body text-text-strong">{explanation}</p>
       {example && (

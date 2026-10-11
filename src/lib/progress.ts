@@ -2,7 +2,7 @@
 // 모두 순수 함수다: 지금 시각(now)과 저장된 값을 받아 다음 값을 돌려주고, 저장은 부르는 쪽이 한다.
 // 날짜는 기기의 로컬 날짜(YYYY-MM-DD)로 센다. 자정이 지나면 다른 날이다.
 
-import type { HeardContext, WordCard, WordEntry } from "../types/index.ts";
+import type { HeardContext, PendingWord, WordCard, WordEntry } from "../types/index.ts";
 import type { Mission, StarRecord, TodayWord } from "./storage/index.ts";
 
 export const MISSION_GOAL = 3; // 오늘의 미션: 모르는 말 3개 물어보기
@@ -199,4 +199,13 @@ export function pickTodayWord(
   const pool = entries.filter((e) => !owned.has(e.id));
   if (pool.length === 0) return null;
   return { date, wordEntryId: pool[hashKey(date) % pool.length].id, opened: false, added: false };
+}
+
+// ---- 물어볼 단어 ----
+
+// 2-8이 열릴 때 물어볼 단어로 넣는다. 같은 말(앞뒤 공백 무시)이 이미 있으면 넣지 않는다.
+export function addPendingOnce(list: PendingWord[], word: PendingWord): { list: PendingWord[]; added: boolean } {
+  const spoken = word.spokenAs.trim();
+  if (!spoken || list.some((w) => w.spokenAs.trim() === spoken)) return { list, added: false };
+  return { list: [...list, { ...word, spokenAs: spoken }], added: true };
 }

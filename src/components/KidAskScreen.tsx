@@ -4,28 +4,33 @@
 // 헤더·탭은 그대로 두고 가운데만 askFlow 상태에 따라 바뀐다:
 // 2-1 홈(idle) · 2-2 듣는 중(listening) · 2-3 생각 중(thinking) · 2-4 확인 질문(confirm) · 2-9 뜻 알려주기(explaining) · 2-10 카드 획득(collected).
 // 2-5 어디서 들었어?(context) · 2-6 후보 고르기(choose)에서 고른 단어도 같은 2-9·2-10으로 간다(2-9b·2-9c·2-10b·2-10c).
-// 2-7·2-8·부적절 단어(그룹 6), E-1·E-2(그룹 11)는 아직 뼈대다.
+// 2-7 다시 말해줄래(retry, [글자 카드로 고를래]면 폴백) · 2-8 물어볼 단어(unknown, 열릴 때 한 번 저장) · 부적절 단어(blocked).
+// 2-11·2-12는 2-2·2-3과 같은 상태다. E-1·E-2(그룹 11)는 아직 뼈대다.
+// 마이크를 쓸 수 없는 기기(미지원·http·이미 거부)면 2-1의 마이크 자리에 폴백(글자 입력·예시 알약)을 둔다.
 // 녹음은 MediaRecorder, 인식은 우리 서버(/api/stt) 어댑터, 모야 목소리는 speechSynthesis. 음성 원본은 보내고 버린다.
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { BLOCKED_WORDS } from "@/data/blocklist";
+import { EXAMPLE_PROMPTS } from "@/data/examplePrompts";
 import { MOCK_WORDS } from "@/data/words.mock";
 import type { HeardContext } from "@/types";
 import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
-import { collectAskedCard, missionStars, starTotal } from "@/lib/progress";
+import { addPendingOnce, collectAskedCard, missionStars, starTotal } from "@/lib/progress";
 import { createRecognizer, listenLimitMs } from "@/lib/services/recognize";
 import { speaker } from "@/lib/services/speech";
 import {
   readCards,
   readMission,
+  readPending,
   readStars,
   readTaught,
   writeCards,
   writeMission,
+  writePending,
   writeStars,
 } from "@/lib/storage";
-import { closeMic, micSupported, openMic } from "./microphone";
+import { closeMic, micPermission, micSupported, openMic } from "./microphone";
 import { SkeletonBody } from "./ScreenSkeleton";
 import { useStored } from "./useStored";
 import { KidHeader } from "./ui/KidHeader";
@@ -33,8 +38,10 @@ import { MicArea } from "./ui/MicButton";
 import { GiftButton, MoyaImage, MoyaListening, MoyaStage, preloadMoya, Sparkle } from "./ui/Moya";
 import { SpeechBubble } from "./ui/SpeechBubble";
 import { TabBar } from "./ui/TabBar";
+import { TextFallback } from "./ui/TextFallback";
 import { Button, CircleButton } from "./ui/buttons";
 import { CandidateCard, ContextChip, LetterTiles, WordCardDetailed, WordCardSimple } from "./ui/cards";
+import { PendingWordNotice } from "./ui/notices";
 
 // crypto.randomUUID는 http(휴대폰에서 개발 서버 접속)에서 없을 수 있어 직접 만든다.
 function newId() {
@@ -55,6 +62,9 @@ const LINES = {
   thinking: "음… 무슨 말인지\n찾아볼게!",
   context: "번역기가 헷갈렸어.\n어디서 들었어?",
   choose: "이 중에 있어?\n눌러서 골라 줘!",
+  retry: "앗, 잘 못 들었어.\n한 번만 더 말해줄래?",
+  unknown: "나도 아직 몰라!\n엄마 아빠랑 같이 알아볼게.",
+  blocked: "그 말은 엄마·아빠한테\n물어보자!", // 피그마에 없음 — 문구는 CLAUDE.md, 배치는 PM 확인 2026-10-11
 } as const;
 
 // 2-5 들은 곳 (피그마 순서·문구). 학교·TV·밖에서 아이콘은 28px 원본(24px 판을 키우면 선이 굵어짐)
@@ -73,6 +83,9 @@ function bubbleLine(state: AskState): string | null {
     case "thinking":
     case "context":
     case "choose":
+    case "retry":
+    case "unknown":
+    case "blocked":
       return LINES[state.phase];
     case "confirm":
       return `${state.candidates[0].entry.word} 말하는 거야?`;
@@ -86,11 +99,8 @@ function bubbleLine(state: AskState): string | null {
   }
 }
 
-// 아직 만들지 않은 상태의 뼈대 (그룹 5·6·11)
+// 아직 만들지 않은 상태의 뼈대 (그룹 11)
 const SKELETON: Partial<Record<AskState["phase"], { code: string; name: string; group: number }>> = {
-  retry: { code: "2-7", name: "다시 말해줄래", group: 6 },
-  unknown: { code: "2-8", name: "물어볼 단어", group: 6 },
-  blocked: { code: "부적절 단어", name: "엄마·아빠한테 물어보자", group: 6 },
   networkError: { code: "E-1", name: "연결이 끊겼어요", group: 11 },
   micOff: { code: "E-2", name: "마이크가 꺼져 있어요", group: 11 },
 };
@@ -101,6 +111,8 @@ const CARD_STATUS = {
   reviewing: { label: "복습 중", stars: 1 },
   mastered: { label: "다 앎", stars: 3 },
 } as const;
+
+const noSubscribe = () => () => {};
 
 type Recording = { recorder: MediaRecorder; stream: MediaStream; timer: number };
 type Playing = "bubble" | "card" | "spoken" | null;
@@ -132,6 +144,8 @@ export function KidAskScreen() {
     const next = reducerRef.current(prev, action);
     current.current = next;
     setState(next);
+    // 2-8이 열릴 때 물어볼 단어로 저장 (같은 말은 한 번만)
+    if (next.phase === "unknown" && prev.phase !== "unknown") savePending(next.spokenAs);
     const line = bubbleLine(next);
     if (line && next.phase !== "listening" && line !== bubbleLine(prev)) speak(line, "bubble");
   }
@@ -142,6 +156,21 @@ export function KidAskScreen() {
   const opening = useRef(false); // 마이크 여는 중(권한 창) — 두 번 눌러도 한 번만
   const left = useRef(false); // 화면을 떠났으면 늦게 온 결과를 버린다
   const [playing, setPlaying] = useState<Playing>(null);
+
+  // 마이크를 쓸 수 없는 기기면 2-1에 폴백을 둔다: 미지원·http(바로 앎), 권한이 이미 거부됨(물어봐서 앎)
+  const supported = useSyncExternalStore(noSubscribe, micSupported, () => true);
+  const [micDenied, setMicDenied] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void micPermission().then((p) => {
+      if (active && p === "denied") setMicDenied(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const micUnavailable = !supported || micDenied;
+  const askTyped = (text: string) => send({ type: "recognized", transcripts: [text] });
 
   // mock STT인지 미리 물어 둔다 (mock이면 2.5초 뒤 자동으로 녹음을 끝낸다)
   useEffect(() => {
@@ -229,6 +258,12 @@ export function KidAskScreen() {
     send(result.ok ? { type: "recognized", transcripts: result.transcripts } : { type: "recognitionFailed", reason: result.reason });
   }
 
+  // 2-8 물어볼 단어 (실패해도 흐름은 그대로)
+  function savePending(spokenAs: string) {
+    const { list, added } = addPendingOnce(readPending(), { id: newId(), spokenAs, createdAt: new Date().toISOString() });
+    if (added) writePending(list);
+  }
+
   // 2-9 [알았어!]: 카드 자동 저장 + 별 +1 + 미션. 이미 있는 단어면 아무것도 늘지 않는다 (T10).
   // 저장에 실패해도 2-10으로 넘어간다 (카드 내용은 단어 데이터로 보여 줌)
   function collect() {
@@ -266,11 +301,14 @@ export function KidAskScreen() {
     send({ type: "goHome" });
   }
 
-  // 이 흐름에서 나올 모야 그림을 미리 받아 둔다 (2-2·2-3 궁금 270, 2-4 궁금 104, 2-9 설명 210, 2-10 신남 96)
+  // 이 흐름에서 나올 모야 그림을 미리 받아 둔다 (2-2·2-3 궁금 270, 2-4 궁금 104, 2-9 설명 210, 2-10 신남 96, 2-7 당황 200, 2-8 설명 190)
   preloadMoya("curious", 270, "cream");
   preloadMoya("curious", 104, "cream");
   preloadMoya("explain", 210);
   preloadMoya("excited", 96, "cream");
+  preloadMoya("confused", 200, "cream"); // 2-7
+  preloadMoya("explain", 190); // 2-8 · 부적절 단어
+  preloadMoya("confused", 150, "cream"); // 2-7 폴백
 
   const line = bubbleLine(state);
   const bubbleSpeak = () => line && speak(line, "bubble");
@@ -291,15 +329,20 @@ export function KidAskScreen() {
             <>
               <SpeechBubble text={LINES.idle} onSpeak={bubbleSpeak} playing={playing === "bubble"} className="w-[270px]" />
               {/* 반짝이(왼쪽 30)와 오늘의 단어(오른쪽 12)는 앱 틀 가장자리 기준, 높이는 모야 무대 기준 (피그마 절대 위치) */}
+              {/* 마이크를 쓸 수 없으면 폴백이 들어갈 자리를 위해 무대 대신 모야 150 (PM 확인 2026-10-11) */}
               <div className="relative -mx-6 flex justify-center self-stretch">
-                <MoyaStage expression="explain" />
-                <Sparkle className="top-[54px] left-[30px]" />
+                {micUnavailable ? <MoyaImage expression="explain" size={150} /> : <MoyaStage expression="explain" />}
+                <Sparkle className={`left-[30px] ${micUnavailable ? "top-5" : "top-[54px]"}`} />
                 {/* 3-3 오늘의 단어 화면은 그룹 8. 지금은 모양만 */}
-                <span className="absolute top-[84px] right-3">
+                <span className={`absolute right-3 ${micUnavailable ? "top-[35px]" : "top-[84px]"}`}>
                   <GiftButton hasNew />
                 </span>
               </div>
-              <MicArea state="idle" onPress={() => void startListening()} />
+              {micUnavailable ? (
+                <TextFallback examples={EXAMPLE_PROMPTS} onAsk={askTyped} />
+              ) : (
+                <MicArea state="idle" onPress={() => void startListening()} />
+              )}
             </>
           ) : (
             <>
@@ -397,6 +440,53 @@ export function KidAskScreen() {
         </main>
       )}
 
+      {state.phase === "retry" && (
+        <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pt-[18px] pb-[14px]">
+          <SpeechBubble text={LINES.retry} onSpeak={bubbleSpeak} playing={playing === "bubble"} className="w-[280px]" />
+          {state.fallback ? (
+            // [글자 카드로 고를래]: 후보가 없어 늘 폴백 (잠정 T3). 마이크 자리 대신 글자 입력, 모야는 150으로
+            <>
+              <MoyaImage expression="confused" background="cream" size={150} />
+              <TextFallback examples={EXAMPLE_PROMPTS} onAsk={askTyped} onVoice={() => void startListening()} />
+            </>
+          ) : (
+            <>
+              <MoyaImage expression="confused" background="cream" size={200} />
+              <MicArea state="retry" onPress={() => void startListening()} />
+              <Button variant="dashed" icon="/icons/card-book.svg" onClick={() => send({ type: "chooseByLetters" })}>
+                글자 카드로 고를래
+              </Button>
+            </>
+          )}
+        </main>
+      )}
+
+      {(state.phase === "unknown" || state.phase === "blocked") && (
+        // 2-8 물어볼 단어 · 부적절 단어(2-8 틀, 단어를 보여 주지 않고 저장도 하지 않음 — PM 확인 2026-10-11)
+        <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pt-[18px] pb-[14px]">
+          <SpeechBubble
+            text={LINES[state.phase]}
+            onSpeak={bubbleSpeak}
+            playing={playing === "bubble"}
+            className="w-[290px] max-w-full"
+          />
+          <MoyaImage expression="explain" size={190} />
+          {state.phase === "unknown" && (
+            <PendingWordNotice
+              spoken={state.spokenAs}
+              onSpeak={() => speak(state.spokenAs, "spoken")}
+              playing={playing === "spoken"}
+            />
+          )}
+          <Button icon="/icons/check-white.svg" onClick={goHome}>
+            알았어!
+          </Button>
+          <Button variant="secondary" icon="/icons/mic.svg" onClick={() => void startListening()}>
+            다른 말 물어볼래
+          </Button>
+        </main>
+      )}
+
       {state.phase === "explaining" && (
         <main className="flex flex-1 flex-col items-center justify-center gap-3.5 px-6 pt-[18px] pb-[14px]">
           <LetterTiles word={state.entry.word} />
@@ -433,6 +523,7 @@ export function KidAskScreen() {
             date={cardDate(card?.createdAt)}
             spoken={card ? card.spokenAs : state.spokenAs}
             onSpeakSpoken={() => speak(card ? card.spokenAs : state.spokenAs, "spoken")}
+            playingSpoken={playing === "spoken"}
             explanation={state.entry.kidExplanation}
             example={state.entry.example}
             stars={CARD_STATUS[card?.status ?? "new"].stars}

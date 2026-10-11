@@ -35,10 +35,11 @@ export function MicButton({ state = "idle", label, className = "", ...rest }: Pr
   );
 }
 
-// 말하기 영역 (2-1 180:6829, 2-2 180:6858, 2-3 180:6870): 마이크 + 아래 글자 줄 (간격 13, 모야/제목 M)
+// 말하기 영역 (2-1 180:6829, 2-2 180:6858, 2-3 180:6870, 2-7 180:6929): 마이크 + 아래 글자 줄 (간격 13, 모야/제목 M)
 // 기본 "눌러서 말하기"(진함) · 듣는 중 "듣고 있어…"(진보라) · 생각 중 "모야가 찾고 있어"(흐림) + 점 37×9
 const MIC_AREA = {
   idle: { mic: "idle", text: "눌러서 말하기", color: "text-text-strong", label: "눌러서 말하기" },
+  retry: { mic: "idle", text: "다시 말하기", color: "text-text-strong", label: "다시 말하기" }, // 2-7 180:6929
   listening: { mic: "listening", text: "듣고 있어…", color: "text-brand-deep", label: "그만 말하기" },
   thinking: { mic: "disabled", text: "모야가 찾고 있어", color: "text-text-faint", label: "모야가 찾고 있어요" },
 } as const;
