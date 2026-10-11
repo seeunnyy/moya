@@ -3,13 +3,15 @@
 // /app 아이 묻기 화면 (design.md "아이 묻기 흐름은 /app 한 주소 + 상태 기계").
 // 헤더·탭은 그대로 두고 가운데만 askFlow 상태에 따라 바뀐다:
 // 2-1 홈(idle) · 2-2 듣는 중(listening) · 2-3 생각 중(thinking) · 2-4 확인 질문(confirm) · 2-9 뜻 알려주기(explaining) · 2-10 카드 획득(collected).
-// 2-5·2-6(그룹 5), 2-7·2-8·부적절 단어(그룹 6), E-1·E-2(그룹 11)는 아직 뼈대다.
+// 2-5 어디서 들었어?(context) · 2-6 후보 고르기(choose)에서 고른 단어도 같은 2-9·2-10으로 간다(2-9b·2-9c·2-10b·2-10c).
+// 2-7·2-8·부적절 단어(그룹 6), E-1·E-2(그룹 11)는 아직 뼈대다.
 // 녹음은 MediaRecorder, 인식은 우리 서버(/api/stt) 어댑터, 모야 목소리는 speechSynthesis. 음성 원본은 보내고 버린다.
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BLOCKED_WORDS } from "@/data/blocklist";
 import { MOCK_WORDS } from "@/data/words.mock";
+import type { HeardContext } from "@/types";
 import { createAskReducer, initialAskState, type AskAction, type AskState } from "@/lib/askFlow";
 import { collectAskedCard, missionStars, starTotal } from "@/lib/progress";
 import { createRecognizer, listenLimitMs } from "@/lib/services/recognize";
@@ -32,7 +34,7 @@ import { GiftButton, MoyaImage, MoyaListening, MoyaStage, preloadMoya, Sparkle }
 import { SpeechBubble } from "./ui/SpeechBubble";
 import { TabBar } from "./ui/TabBar";
 import { Button, CircleButton } from "./ui/buttons";
-import { LetterTiles, WordCardDetailed, WordCardSimple } from "./ui/cards";
+import { CandidateCard, ContextChip, LetterTiles, WordCardDetailed, WordCardSimple } from "./ui/cards";
 
 // crypto.randomUUID는 http(휴대폰에서 개발 서버 접속)에서 없을 수 있어 직접 만든다.
 function newId() {
@@ -51,13 +53,26 @@ const LINES = {
   idle: "궁금한 점이 생겼어?\n나랑 함께 알아보자!",
   listening: "응응, 듣고 있어!",
   thinking: "음… 무슨 말인지\n찾아볼게!",
+  context: "번역기가 헷갈렸어.\n어디서 들었어?",
+  choose: "이 중에 있어?\n눌러서 골라 줘!",
 } as const;
+
+// 2-5 들은 곳 (피그마 순서·문구). 학교·TV·밖에서 아이콘은 28px 원본(24px 판을 키우면 선이 굵어짐)
+const PLACES: { value: HeardContext; label: string; icon: string }[] = [
+  { value: "home", label: "집", icon: "/icons/home.svg" },
+  { value: "school", label: "유치원·학교", icon: "/icons/school-28.svg" },
+  { value: "tv", label: "TV·영상", icon: "/icons/tv-28.svg" },
+  { value: "book", label: "책", icon: "/icons/book.svg" },
+  { value: "outside", label: "밖에서", icon: "/icons/tree-28.svg" },
+];
 
 function bubbleLine(state: AskState): string | null {
   switch (state.phase) {
     case "idle":
     case "listening":
     case "thinking":
+    case "context":
+    case "choose":
       return LINES[state.phase];
     case "confirm":
       return `${state.candidates[0].entry.word} 말하는 거야?`;
@@ -73,8 +88,6 @@ function bubbleLine(state: AskState): string | null {
 
 // 아직 만들지 않은 상태의 뼈대 (그룹 5·6·11)
 const SKELETON: Partial<Record<AskState["phase"], { code: string; name: string; group: number }>> = {
-  context: { code: "2-5", name: "어디서 들었어?", group: 5 },
-  choose: { code: "2-6", name: "후보 고르기", group: 5 },
   retry: { code: "2-7", name: "다시 말해줄래", group: 6 },
   unknown: { code: "2-8", name: "물어볼 단어", group: 6 },
   blocked: { code: "부적절 단어", name: "엄마·아빠한테 물어보자", group: 6 },
@@ -330,6 +343,57 @@ export function KidAskScreen() {
               맞아!
             </Button>
           </div>
+        </main>
+      )}
+
+      {(state.phase === "context" || state.phase === "choose") && (
+        <main className={`flex flex-1 flex-col items-center px-6 pt-[18px] pb-[14px] ${state.phase === "context" ? "gap-[18px]" : "gap-3"}`}>
+          <div className="flex w-full items-center gap-2">
+            <MoyaImage expression="curious" background="cream" size={104} />
+            <SpeechBubble
+              text={LINES[state.phase]}
+              tail="left"
+              onSpeak={bubbleSpeak}
+              playing={playing === "bubble"}
+              className="min-w-px flex-1"
+            />
+          </div>
+          {state.phase === "context" ? (
+            <>
+              {/* 들은 곳 5개: 3 + 2, 가운데 정렬 (간격 14). 375px처럼 좁으면 가로 간격만 줄여 3 + 2를 지킨다 */}
+              <div className="flex w-full flex-wrap justify-center gap-x-[min(14px,calc((100%-300px)/2))] gap-y-3.5">
+                {PLACES.map((p) => (
+                  <ContextChip
+                    key={p.value}
+                    label={p.label}
+                    icon={p.icon}
+                    onClick={() => send({ type: "pickContext", context: p.value })}
+                  />
+                ))}
+              </div>
+              <p className="type-body-small whitespace-nowrap text-text-normal">들은 곳을 알려 주면 더 잘 찾을 수 있어!</p>
+              <Button variant="dashed" onClick={() => send({ type: "pickContext", context: null })}>
+                잘 모르겠어
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* 카드를 한 번 누르면 그 단어의 2-9. 스피커는 소리만 */}
+              {state.candidates.map((c) => (
+                <CandidateCard
+                  key={c.entry.id}
+                  word={c.entry.word}
+                  hint={c.entry.hint}
+                  image={c.entry.image}
+                  onSelect={() => send({ type: "pickCandidate", entryId: c.entry.id })}
+                  onSpeak={() => speak(c.entry.word, "card")}
+                />
+              ))}
+              <Button variant="dashed" onClick={() => send({ type: "noneOfThese" })}>
+                다 아니야
+              </Button>
+            </>
+          )}
         </main>
       )}
 
