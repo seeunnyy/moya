@@ -21,7 +21,7 @@ This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 �
 - GitHub
 
 ## Current Stage
-Session 7: `add-word-question-mvp`는 archive(기준 스펙 openspec/specs/). 새 change `apply-hifi-design`(완성 피그마 전면 적용, 브랜치 design-v2) 제안 완료 — 다음은 그룹 1(재료 준비). 실제 STT는 확정(~10/22) 후 그룹 12.1 (상세는 planning/HANDOFF.md)
+Session 8: `apply-hifi-design`(브랜치 design-v2) 그룹 1~12 완료(④ 베타 제외 전 화면, 흐름 10개 검증, 옛 코드 정리). 남은 것: 12.1 실제 STT(확정 ~10/22 후), 12.5 휴대폰 실기기 확인(PM, 05 §6), 13 모션 (상세는 planning/HANDOFF.md)
 
 ## Working Rules
 - Read relevant files before suggesting changes.

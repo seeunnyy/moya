@@ -41,7 +41,7 @@
 
 - 들어가기 조건은 `src/components/gates.tsx`에 둔다. 계정은 `src/app/app/layout.tsx`·`src/app/parent/layout.tsx`의 `RequireAccount`, 보호자 잠금은 `src/app/parent/(locked)/layout.tsx`의 `RequireParentUnlock`(`(locked)`는 주소에 나오지 않는 묶음 폴더). localStorage는 브라우저에서만 읽으므로 읽기 전에는 아무것도 그리지 않는다.
 - 보호자 잠금 해제는 `/parent` 레이아웃의 React 상태(메모리)에만 둔다. 새로고침하거나 보호자 주소를 벗어나면(예: [아이 모드로 돌아가기]) 레이아웃이 사라져 다시 잠긴다.
-- 옛 주소 `/app/ask`, `/app/mic`, `/app/cards`, `/app/cards/[id]`는 그룹 12에서 지운다(지금은 계정이 있어야 열림). `/app`의 옛 홈과 `/parent`의 옛 저장·전송 고지 화면은 새 뼈대로 바뀌었다.
+- 옛 와이어프레임 주소 `/app/ask`·`/app/mic`·`/app/cards`·`/app/cards/[id]`와 그 화면 부품은 그룹 12에서 지웠다(지금은 없는 주소). 개발 서버에 같은 와이파이의 휴대폰으로 접속할 수 있게 `next.config.ts`에 사설망 `allowedDevOrigins`를 둔다(개발 서버에만 해당).
 
 ### API (서버 전용, 키 보호)
 | Method | Path | 역할 | 단계 |
@@ -71,8 +71,8 @@
 |---|---|
 | src/app/ | 라우트 (페이지 + api) |
 | src/components/ui/ | 완성 피그마 공통 부품 (03 §2) |
-| src/components/ | 화면 조립, 들어가기 조건(`gates.tsx`), 저장소 읽기 훅(`useStored.ts`), 라우트 뼈대(`ScreenSkeleton.tsx`, 화면이 생기면 지움). 옛 화면 부품은 그룹 12에서 지움 |
-| src/lib/askFlow.ts | 아이 묻기 흐름 상태 기계 (§4). `askFlow.legacy.ts`는 옛 `/app/ask` 전용, 그룹 12에서 지움 |
+| src/components/ | 화면 조립(`*Screen.tsx`, E-2 가운데 `MicOffBody.tsx`), 들어가기 조건(`gates.tsx`), 저장소 읽기 훅(`useStored.ts`), 마이크(`microphone.ts`) |
+| src/lib/askFlow.ts | 아이 묻기 흐름 상태 기계 (§4) |
 | src/lib/progress.ts | 별·미션·로켓 도장·연속 학습·오늘의 단어 계산 (순수 함수, §5) |
 | src/lib/pronunciation/ | 되묻기 핵심 로직. 저장소·외부 API·라이브러리 없이 순수 함수로 만든다. |
 | src/lib/services/ | 서비스 어댑터. `stt`(서버, 외부 STT), `recognize`(화면 → /api/stt, 재시도·mock 타이밍), `speech`(speechSynthesis 래퍼) |
@@ -167,7 +167,7 @@ type TaughtLinks = Record<string, string>; // 아이가 한 말 → WordEntry.id
 
 type PronunciationRule = { from: string; to: string; position: "초성" | "중성" | "종성"; note: string };
 ```
-- `CandidateResult`(confirm/choose/unknown)와 `inferWord`는 옛 화면용으로 남아 있고, 새 흐름의 화면 분기에는 쓰지 않는다.
+- `CandidateResult`(confirm/choose/unknown)와 `inferWord`는 되묻기 로직의 공개 함수로 남겨 두고(테스트에서 씀), 새 흐름의 화면 분기에는 `findCandidates`를 쓴다.
 
 ## 4. State
 `/app`은 `useReducer` 상태 기계 하나(`src/lib/askFlow.ts`, `createAskReducer(entries, { blockedWords, taught })`)로 관리한다. 상태 관리 라이브러리는 추가하지 않는다. 저장·별 계산은 reducer 밖(progress.ts)에서 하고 결과를 `cardCollected`로 알린다. 보호자가 알려 준 연결(`taught`)이 바뀌면 reducer를 다시 만든다.
@@ -244,4 +244,3 @@ micOff(E-2): 마이크를 쓸 수 없음. idle·retry·micOff에서는 폴백 �
 | MAX_RECORDING_MS | 8000 | 최대 녹음 시간 (잠정) |
 | MOCK_LISTEN_MS / MOCK_THINK_MS | 2500 / 1500 | mock STT일 때만 |
 | MISSION_SUCCESS_DELAY_MS | 1500 | 2-13 → 2-14 (실제로도) |
-| MAX_RETRY | 1 | 옛 흐름 전용 (그룹 12에서 지움) |

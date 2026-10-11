@@ -1,46 +1,36 @@
 # ARCHITECTURE.md
 
+> 요약판. 자세한 내용은 `planning/md-design/04_TECHNICAL_DESIGN.md`, 화면·이동은 `openspec/changes/apply-hifi-design/design.md`.
+
 ## Service Structure
-User → Landing Page → App Page → UI Components → State → Data → Tests → Deploy
+보호자 가입(이 기기 저장) → 아이 모드(묻기·지구 사전·내 정보) ↔ 보호자 모드(비밀번호 잠금). 서버는 음성인식 라우트 하나.
 
 ## Core Flow (MVP)
-1. 묻기: 아이 음성 → 음성인식 → 문장("○○이 뭐야?")에서 대상 단어 추출
-2. 되묻기: 자모 분해 → 발음 역규칙 적용 → 검수된 단어 데이터와 거리 비교
-   - 인식에 성공하면 항상 되묻기 화면을 거친다 (후보 미리보기 + 결과에 맞는 버튼 하나)
-   - 후보 1개: 확인 질문
-   - 후보 여러 개: 후보 카드 선택 (거리 순, 같으면 데이터 순). 맥락 질문은 와이어프레임에서 빠졌고 `orderByContext` 로직만 남김 (LLM 재순위는 베타)
-   - 후보 0개: 물어볼 단어 안내 → [내 단어장에 저장하기]
-3. 단어 카드: 미리 검수한 단어 데이터의 쉬운 설명·영어 표기 → 브라우저 음성합성으로 읽기 → [내 단어장에 저장하기]로 카드 저장 (예문은 데이터에만)
-   - 단어 데이터는 LLM 초안을 사전 뜻과 대조해 검수한 뒤 src/data에 미리 넣는다 (사전 범위 밖 금지)
+1. 묻기: 아이 음성 → `/api/stt`(서버에서만 STT 호출, 지금은 mock) → 인식 후보들에서 대상 단어 추출
+2. 되묻기 (`src/lib/pronunciation`, 외부 API 없는 순수 함수): 자모 분해 → 발음 역규칙 → 검수 단어와 거리 비교
+   - 후보 순서: 보호자가 알려 준 단어 → 발음 거리 → 들은 곳(2-5) → 데이터 순
+   - 2-4 확인 질문(첫 후보) → [아니야] → 2-5 어디서 들었어? → 2-6 후보 고르기 (최대 3)
+   - 후보 0개 → 2-8 물어볼 단어(보호자가 5-3에서 알려 줄 수 있음) · 인식 실패 → 2-7 · 네트워크 → E-1 · 마이크 불가 → E-2(+ 글자 입력 폴백)
+3. 뜻 알려주기(2-9) → 카드 획득(2-10): 설명·예문은 `src/data` 검수 데이터만. 별·미션·로켓 도장은 이 기기에 저장
+4. 음성 출력은 브라우저 `speechSynthesis`. 아이 음성 원본은 저장하지 않는다(인식 글자만)
 
-## Planned Routes
-- /: Landing page
-- /app: 아이 모드 홈 (하단 탭)
-- /app/mic: 마이크 권한 안내
-- /app/ask: 묻기·되묻기·단어 카드 (메인 흐름, 상태 기계)
-- /app/cards: 단어 카드 목록 (하단 탭)
-- /app/cards/[id]: 단어 카드 상세
-- /parent: 보호자 화면 — 저장·전송 안내. 부모 리포트는 2순위
-- /api/stt: 음성인식 서버 라우트 (키 보호용). /api/rerank, /api/explain은 베타
+## Routes
+- `/` 1-1 시작 · `/login` 1-0 · `/signup`·`/signup/{profile,consent,pin,mic,done}` 1-2~1-8 · `/terms` 1-2a
+- `/app` 아이 묻기 전부(2-0~2-14, E-1, E-2 — askFlow 상태) · `/app/dictionary`·`/app/dictionary/[cardId]` 3-1·3-2 · `/app/today` 3-3 · `/app/me`·`/app/me/stars` 3-4·3-5
+- `/parent` 5-1 잠금 · `/parent/reset` 5-1b · `/parent/{home,words,settings,settings/profile,settings/pin,settings/consent}` 5-2~5-9
+- `/api/stt` 음성인식(서버 전용) · `/dev/components`·`/dev/seed` 개발용(운영 빌드 404)
 
 ## Source Structure
-- src/app/: 라우트 (페이지 + api)
-- src/components/: UI 컴포넌트 (MoyaCharacter, MicButton, CandidatePicker, WordCard)
-- src/lib/pronunciation/: 되묻기 핵심 로직 — 자모 분해, 발음 역규칙, 후보 거리 비교 (외부 API 없이 동작)
-- src/lib/services/: 외부 서비스 어댑터 — 해커톤은 stt(처음엔 mock)와 speech(브라우저 speechSynthesis). llm, dictionary는 베타
-- src/lib/storage/: 단어 카드 저장 (MVP: localStorage)
-- src/data/: 발음 역규칙 표, 검수된 단어 데이터 50~100개(힌트·쉬운 설명·예문 포함), mock 데이터 (코드와 분리해 아이 녹음 테스트 결과로 갱신)
-- src/types/: 공통 타입
-- docs/: project documents
-- tests/: test code (되묻기 로직이 1순위 테스트 대상)
-
-## Data (MVP)
-- WordEntry: 단어, 힌트, 쉬운 설명, 예문(화면 미표시), 영어 표기(선택), 사전 뜻, 상황 태그(화면 미사용)
-- WordCard: 단어, 사전 뜻, 아이 눈높이 설명, 예문, 아이가 처음 말한 발음(인식 텍스트), 만든 날짜 (들은 상황은 예전 데이터 호환용)
-- (2순위) 다음 복습일
+- `src/app/`: 라우트 (페이지 + api)
+- `src/components/ui/`: 완성 피그마 공통 부품 · `src/components/*Screen.tsx`: 화면 조립 · `gates.tsx`: 들어가기 조건
+- `src/lib/askFlow.ts`: 아이 묻기 상태 기계 · `progress.ts`·`cardView.ts`·`parent.ts`·`onboarding.ts`: 순수 계산
+- `src/lib/pronunciation/`: 되묻기 핵심 로직 (외부 API 없음)
+- `src/lib/services/`: `stt`(서버) · `recognize`(화면 → /api/stt) · `speech`(speechSynthesis)
+- `src/lib/storage/`: localStorage 저장 (키마다 버전)
+- `src/data/`: 검수(현재 mock) 단어 데이터·역규칙·예시 문장·부적절 단어
+- `tests/`: Node 내장 테스트 러너 (`npm test`)
 
 ## External Services
-- 해커톤: 음성인식(STT) 하나만 쓴다. 서비스는 미정 (TBD). .env.local의 키로 서버에서만 호출한다.
+- 해커톤: 음성인식(STT) 하나만. 서비스는 10/22까지 확정. `.env.local`의 키로 서버에서만 호출한다.
 - 음성 출력: 브라우저 내장 speechSynthesis (외부 API 아님)
-- 베타: 사전 API(예: 국립국어원 사전 오픈 API), LLM (실시간 설명, 맥락 재순위)
-- 상세: planning/md-design/04_TECHNICAL_DESIGN.md
+- 베타: 사전 API, LLM(실시간 설명·맥락 재순위), 서버 계정·카카오·메일
