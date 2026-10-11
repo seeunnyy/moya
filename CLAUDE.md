@@ -21,7 +21,7 @@ This app helps 글을 막 배우는 만 5~8세 아이 solve "철자를 몰라 �
 - GitHub
 
 ## Current Stage
-Session 8: `apply-hifi-design`(브랜치 design-v2) 그룹 1~12 완료(④ 베타 제외 전 화면, 흐름 10개 검증, 옛 코드 정리). 남은 것: 12.1 실제 STT(확정 ~10/22 후), 12.5 휴대폰 실기기 확인(PM, 05 §6), 13 모션 (상세는 planning/HANDOFF.md)
+Session 8: `apply-hifi-design`(브랜치 design-v2) 그룹 1~12 완료(④ 베타 제외 전 화면, 흐름 10개 검증, 옛 코드 정리). 그룹 13 모션(CSS, 동작 줄이기에서 꺼짐)도 완료. 남은 것: 12.1 실제 STT(확정 ~10/22 후), 12.5 휴대폰 실기기 확인(PM, 05 §6) (상세는 planning/HANDOFF.md)
 
 ## Working Rules
 - Read relevant files before suggesting changes.
