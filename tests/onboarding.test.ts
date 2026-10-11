@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkLogin, isEmail, validateSignup, vocative, SIGNUP_ERRORS } from "../src/lib/onboarding.ts";
+import { checkLogin, isEmail, particle, validateSignup, vocative, withParticle, SIGNUP_ERRORS } from "../src/lib/onboarding.ts";
 
 test("부르는 말: 받침 있으면 '아', 없으면 '야'", () => {
   assert.equal(vocative("지우"), "지우야");
@@ -33,4 +33,13 @@ test("가입 확인: 이메일 가입은 이메일·비밀번호·필수 약관,
   });
   assert.deepEqual(validateSignup({ email: "", password: "", termsAll: true }, "kakao"), {});
   assert.deepEqual(validateSignup({ email: "", password: "", termsAll: false }, "kakao"), { terms: SIGNUP_ERRORS.terms });
+});
+
+test("받침에 따라 붙는 말 (5-2·5-3a·5-7)", () => {
+  assert.equal(withParticle("지우", "이가", "가"), "지우가");
+  assert.equal(withParticle("민준", "이가", "가"), "민준이가");
+  assert.equal(particle("저구멍", "이", "가"), "이");
+  assert.equal(particle("저금통", "이라는", "라는"), "이라는");
+  assert.equal(particle("우산", "이라는", "라는"), "이라는");
+  assert.equal(particle("나비", "이라는", "라는"), "라는");
 });

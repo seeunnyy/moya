@@ -21,6 +21,15 @@ export function vocative(nickname: string): string {
   return `${name}${hasFinalConsonant(name) ? "아" : "야"}`;
 }
 
+// 받침에 따라 붙는 말: particle("저구멍", "이", "가") → "이", withParticle("지우", "이가", "가") → "지우가"
+export function particle(word: string, afterConsonant: string, afterVowel: string): string {
+  return hasFinalConsonant(word.trim()) ? afterConsonant : afterVowel;
+}
+
+export function withParticle(word: string, afterConsonant: string, afterVowel: string): string {
+  return `${word.trim()}${particle(word, afterConsonant, afterVowel)}`;
+}
+
 export type LoginResult = "ok" | "noAccount";
 
 // 1-0: 이 기기에 저장된 계정과 같은지. 이메일은 대소문자·앞뒤 공백 무시

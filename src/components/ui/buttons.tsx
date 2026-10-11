@@ -41,15 +41,15 @@ export function Button({
   );
 }
 
-// 다시 듣기(스피커) 버튼: 기본·호버·누름·재생 중·비활성 (180:5725)
+// 다시 듣기(스피커) 버튼: 기본·호버·누름·재생 중·비활성 (180:5725). 크기 30·24, 40(5-3 물어볼 단어, 모서리 15)
 export function SpeakerButton({
   playing = false,
   size = 30,
   label = "다시 듣기",
   className = "",
   ...rest
-}: NativeButton & { playing?: boolean; size?: 30 | 24; label?: string }) {
-  const box = size === 30 ? "size-[30px] rounded-[15px]" : "size-6 rounded-xl";
+}: NativeButton & { playing?: boolean; size?: 30 | 24 | 40; label?: string }) {
+  const box = size === 30 ? "size-[30px] rounded-[15px]" : size === 40 ? "size-10 rounded-[15px]" : "size-6 rounded-xl";
   const state = playing
     ? "bg-brand-deep shadow-speaker-playing"
     : "bg-brand drop-shadow-speaker hover:bg-brand-hover hover:drop-shadow-speaker-hover active:bg-brand-pressed active:drop-shadow-speaker-pressed disabled:bg-disabled-fill disabled:drop-shadow-none";

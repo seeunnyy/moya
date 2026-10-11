@@ -1,7 +1,7 @@
 "use client";
 
 // 라우트 뼈대 (작업 3.1). 화면 속은 그룹 4~11에서 만든다. 지금은 화면 번호·이름과 이동 확인용 버튼만 보인다.
-// 아이 화면은 헤더(별·미션은 저장된 값)와 하단 탭, 온보딩은 상단 바, 보호자는 제목이 있는 상단 바.
+// 아이 화면은 헤더(별·미션은 저장된 값)와 하단 탭. (온보딩·보호자 뼈대는 그룹 9·10에서 화면으로 바뀌어 없앴다)
 
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -9,7 +9,6 @@ import { MISSION_GOAL, missionStars } from "@/lib/progress";
 import { readMission } from "@/lib/storage";
 import { KidTop } from "./KidTop";
 import { TabBar, type TabKey } from "./ui/TabBar";
-import { TopBar } from "./ui/bars";
 import { Button } from "./ui/buttons";
 import { useStored } from "./useStored";
 
@@ -63,19 +62,5 @@ export function KidSkeleton({ tab, children, ...body }: Body & { tab?: TabKey })
       </SkeletonBody>
       <TabBar selected={tab ?? "play"} />
     </>
-  );
-}
-
-export function ParentSkeleton({
-  left = "back",
-  onLeft,
-  ...body
-}: Body & { left?: "back" | "close"; onLeft?: () => void }) {
-  const router = useRouter();
-  return (
-    <div className="flex min-h-dvh flex-col bg-parent-bg">
-      <TopBar left={left} title={body.name} onLeft={onLeft ?? (() => router.back())} />
-      <SkeletonBody {...body} />
-    </div>
   );
 }

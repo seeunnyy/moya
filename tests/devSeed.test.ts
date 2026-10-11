@@ -7,6 +7,7 @@ import {
   readAccount,
   readCards,
   readMission,
+  readPending,
   readPin,
   readProfile,
   readStars,
@@ -76,6 +77,7 @@ test("피그마 상태: 지구 사전 6장(상태 셋), 별 24, 연속 3일, 오
   assert.equal(cards.find((c) => c.word === "편의점")?.reviewStep, 2);
   assert.equal(cards.find((c) => c.word === "나비")?.reviewStep, 1);
   assert.equal(readToday(store)?.wordEntryId, "dalpaengi-1");
+  assert.deepEqual(readPending(store).map((p) => p.spokenAs), ["저구멍"]);
 });
 
 test("다른 상태 위에 넣어도 섞이지 않는다", () => {

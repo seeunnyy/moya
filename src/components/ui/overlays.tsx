@@ -43,7 +43,8 @@ export function BottomSheet({ onClose, label, children }: { onClose: () => void;
   );
 }
 
-// 확인 창: 제목(보호자/소제목) + 설명(본문) + [취소][확인]. 지우기·철회는 danger, 로그아웃은 primary
+// 확인 창: 제목(보호자/소제목) + 설명(본문) + [취소][확인]. 지우기·철회는 danger, 로그아웃은 primary.
+// 피그마는 상태바를 포함한 874 화면의 가운데에 두어(top 332), 상태바를 뺀 812 화면에서는 가운데보다 31px 위다
 export function ConfirmDialog({
   title,
   body,
@@ -63,7 +64,7 @@ export function ConfirmDialog({
 }) {
   return (
     <Overlay onClose={onCancel} label={title}>
-      <div className="absolute top-1/2 left-1/2 flex w-[350px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-[26px] bg-white px-[22px] pt-[26px] pb-[22px]">
+      <div className="absolute top-[calc(50%-31px)] left-1/2 flex w-[350px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-[26px] bg-white px-[22px] pt-[26px] pb-[22px]">
         <p className="w-full text-center type-parent-subtitle text-text-strong">{title}</p>
         <p className="w-full text-center type-body text-text-normal">{body}</p>
         <div className="flex w-full gap-2.5 pt-2">

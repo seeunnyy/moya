@@ -15,6 +15,7 @@ import {
   writeCards,
   writeConsent,
   writeMission,
+  writePending,
   writePin,
   writeProfile,
   writeSettings,
@@ -62,7 +63,7 @@ export const SEED_PRESETS: { key: SeedPreset; label: string; description: string
   {
     key: "figma",
     label: "피그마 화면 상태",
-    description: "지구 사전 6장(새 카드·복습 중·다 앎), 별 24개, 연속 3일, 오늘의 단어 달팽이. 피그마 ③과 겹쳐 볼 때.",
+    description: "지구 사전 6장(새 카드·복습 중·다 앎), 별 24개, 연속 3일, 오늘의 단어 달팽이, 물어볼 단어 저구멍. 피그마 ③·⑤와 겹쳐 볼 때.",
     goTo: "/app/dictionary",
   },
 ];
@@ -176,5 +177,9 @@ export function applySeed(preset: SeedPreset, store: SeedStore, now: Date = new 
     writeProgress(store, figmaProgress(now));
     // 피그마 3-3 오늘의 단어 '달팽이' (아직 열지 않음 → 2-1 선물에 새 표시)
     writeToday({ date: localDateKey(now), wordEntryId: entry("달팽이").id, opened: false, added: false }, store);
+    // 피그마 5-2·5-3 물어볼 단어 '저구멍' (사흘 전 오후 7:12, 아직 안 알려 줌)
+    const asked = daysAgo(now, 3, 19);
+    asked.setMinutes(12);
+    writePending([{ id: "seed-pending-1", spokenAs: "저구멍", createdAt: asked.toISOString() }], store);
   }
 }
